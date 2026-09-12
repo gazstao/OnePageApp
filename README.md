@@ -4,15 +4,16 @@ Coleção de pequenos projetos, ferramentas e experimentos desenvolvidos em **HT
 
 A ideia é explorar conceitos, testar ideias e criar aplicações simples que possam ser úteis, educativas ou simplesmente divertidas e que rodem diretamente no navegador, construídas em uma única página cada.
 
-## 🚀 Projetos
+## Projetos
 
 * Calculadora de Investimentos
 * Arcade de Jogos Antigos
 * Ampulheta
 * Trilha Leis do Triunfo baseado no livro de Napoleon Hill
 * Academia de IA
+* Descoberta Vocacional
 
-## 📁 Estrutura
+## Estrutura
 
 Cada experimento pode ser encontrado em seu próprio arquivo e baixado e executado diretamente no navegador.
 

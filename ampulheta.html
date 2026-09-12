@@ -499,6 +499,34 @@
     let remainingSeconds = totalSeconds;
     let timerId = null;
     let isRunning = false;
+    let audioCtx = null;
+
+function playPlim() {
+  // Cria o contexto na 1ª interação (política de autoplay dos navegadores)
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  const now = audioCtx.currentTime;
+
+  // 3 toques curtos de "plim"
+  for (let i = 0; i < 5; i++) {
+    const t = now + i * 0.25; // intervalo de 250 ms entre toques
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1200+i*600, t);          // frequência do "plim"
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.18);
+
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.75);
+  }
+}
+
 
     function getInputSeconds() {
       const minutes = Math.max(0, parseInt(minutesInput.value, 10) || 0);
@@ -543,6 +571,9 @@
         return;
       }
 
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+
       if (remainingSeconds <= 0) {
         totalSeconds = getInputSeconds() || 1;
         remainingSeconds = totalSeconds;
@@ -576,6 +607,7 @@
 
     function finishTimer() {
       stopTimer();
+      playPlim();    
       remainingSeconds = 0;
       updateDisplay();
       status.textContent = "Tempo concluído";
