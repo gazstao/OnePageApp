@@ -10,6 +10,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 * Arcade de Jogos Antigos
 * Ampulheta
 * Trilha Leis do Triunfo baseado no livro de Napoleon Hill
+* Academia de IA
 
 ## 📁 Estrutura
 
