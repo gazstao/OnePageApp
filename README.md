@@ -13,6 +13,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 * Academia de IA
 * Descoberta Vocacional
 * Gratidao na Vida
+* Lab Algoritmos
 
 ## Estrutura
 
