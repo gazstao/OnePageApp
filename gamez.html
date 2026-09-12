@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d1418">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230d1418'/%3E%3Cpath d='M16 20h32v24H16z' fill='none' stroke='%2364d7c8' stroke-width='4'/%3E%3Cpath d='M23 29h5v5h-5zm13 0h5v5h-5zm-9 10h10v4H27z' fill='%23f5cf59'/%3E%3C/svg%3E">
+  <title>Voltage Archive — Arcade Retrô</title>
+  <meta name="description" content="Arcade retrô com Snake jogável, feito em um único arquivo HTML.">
+  <style>
+    :root{--bg:#0d1418;--panel:#202b2f;--cream:#f3e7bd;--muted:#94a19b;--cyan:#64d7c8;--yellow:#f5cf59;--red:#f05c45;--line:#334148}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--bg)}
+    body{margin:0;min-width:320px;background:var(--bg);color:#e5e0d1;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+    button,a{-webkit-tap-highlight-color:transparent}button{font:inherit}
+    .app{position:relative;overflow:hidden;min-height:100vh}
+    .app:before{content:"";position:fixed;z-index:20;inset:0;pointer-events:none;opacity:.08;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.18) 4px,transparent 5px);mix-blend-mode:screen}
+    .app:after{content:"";position:fixed;z-index:19;inset:0;pointer-events:none;opacity:.08;background-image:radial-gradient(rgba(245,207,89,.8) .5px,transparent .7px);background-size:5px 5px}
+    .ambient{position:absolute;pointer-events:none;border-radius:50%;opacity:.2}.a{width:32rem;height:32rem;background:#b84f38;top:-14rem;left:-12rem}.b{width:28rem;height:28rem;background:#167a81;top:42rem;right:-12rem;opacity:.15}
+    .shell{max-width:1440px;margin:auto;padding:0 5vw;position:relative;z-index:1}
+    .mono,.eyebrow,.meta,.rule,.number,.tag,.top,.score-label,.controls-note,footer{font-family:"Courier New",monospace}
+    header{height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(229,224,209,.12)}
+    .brand{color:var(--cream);display:flex;align-items:center;gap:12px;text-decoration:none}
+    .brand-mark{width:34px;height:34px;border:1px solid var(--yellow);display:grid;place-items:center;box-shadow:4px 4px 0 #167a81;font:bold 25px Arial;color:var(--yellow)}
+    .brand-name{font-family:"Arial Black",Arial,sans-serif;text-transform:uppercase;letter-spacing:.17em;font-size:.88rem}
+    .brand-sub{display:block;color:#8c9895;font:10px "Courier New",monospace;letter-spacing:.15em;margin-top:3px}
+    nav{display:flex;gap:25px}nav a{color:#a6afaa;font:11px "Courier New",monospace;letter-spacing:.11em;text-transform:uppercase;text-decoration:none}nav a:hover{color:var(--yellow)}
+    .signal{display:flex;align-items:center;gap:8px;color:#8c9895;font:10px "Courier New",monospace;text-transform:uppercase}.dot{width:7px;height:7px;background:var(--cyan);border-radius:50%;box-shadow:0 0 12px var(--cyan);animation:blink 2.5s infinite}
+    .hero{min-height:510px;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.85fr);align-items:center;gap:5vw;padding:74px 0 62px}.hero>*{min-width:0}
+    .eyebrow{display:flex;align-items:center;gap:13px;color:var(--yellow);font-size:11px;letter-spacing:.18em;text-transform:uppercase}.eyebrow:before{content:"";height:1px;width:32px;background:currentColor}
+    h1{margin:22px 0 20px;max-width:730px;color:var(--cream);font:900 clamp(3.5rem,8vw,7.5rem)/.9 "Arial Black",Arial,sans-serif;letter-spacing:-.08em;text-transform:uppercase}
+    h1 em{color:var(--cyan);font-style:normal;display:block;text-shadow:3px 0 rgba(240,92,69,.45)}
+    .hero-copy{max-width:480px;margin:0;color:#a6afaa;font-size:16px;line-height:1.6}.meta{display:flex;gap:22px;margin-top:32px;flex-wrap:wrap;color:#8c9895;font-size:10px;text-transform:uppercase}.meta strong{color:var(--cream)}
+    .monitor{width:min(100%,420px);justify-self:end;padding:19px 19px 31px;background:#253136;border:1px solid #455158;box-shadow:14px 14px 0 rgba(22,122,129,.44),-8px -8px 0 rgba(245,207,89,.12);transform:rotate(1.5deg)}
+    .screen{aspect-ratio:1.3;border:7px solid #111c20;background:#071317;position:relative;overflow:hidden;box-shadow:inset 0 0 35px #07525a;background-image:linear-gradient(rgba(72,190,182,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(72,190,182,.13) 1px,transparent 1px);background-size:26px 26px}
+    .screen:before{content:"";position:absolute;width:27%;aspect-ratio:1;border:3px solid var(--cyan);left:36%;top:34%;border-radius:45%;box-shadow:0 0 15px var(--cyan)}
+    .screen:after{content:"";position:absolute;width:7px;height:7px;background:var(--yellow);left:76%;top:22%;box-shadow:0 0 17px var(--yellow);animation:drift 3s ease-in-out infinite}
+    .hud,.label{display:flex;justify-content:space-between;color:var(--yellow);font:9px "Courier New",monospace;letter-spacing:.12em}.hud{position:absolute;z-index:2;top:14px;left:15px;right:15px}.label{color:#d2d4bb;margin-top:12px;text-transform:uppercase}
+    .catalog{padding:32px 0 115px}.rule{display:flex;align-items:center;gap:17px;color:#82918c;font-size:10px;letter-spacing:.14em;text-transform:uppercase}.rule:after{content:"";height:1px;background:rgba(229,224,209,.13);flex:1}
+    .catalog-head{display:flex;justify-content:space-between;align-items:end;margin:23px 0 31px;gap:20px}h2{margin:0;color:var(--cream);font:900 clamp(1.7rem,3vw,2.7rem)/1 "Arial Black",Arial,sans-serif;letter-spacing:-.05em;text-transform:uppercase}.catalog-note{max-width:285px;margin:0;color:#82918c;font:11px/1.55 "Courier New",monospace;text-align:right}
+    .grid{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:13px}.card{min-height:190px;display:flex;flex-direction:column;justify-content:space-between;padding:19px;border:1px solid var(--line);background:rgba(22,31,35,.72);cursor:pointer;transition:.25s}.card:hover{transform:translateY(-6px);border-color:var(--yellow);background:#1b282d}.card.selected{border-color:var(--cyan);box-shadow:inset 4px 0 var(--cyan)}.card:first-child{grid-row:span 2;min-height:393px;background:linear-gradient(145deg,rgba(22,122,129,.3),rgba(22,31,35,.8) 45%)}
+    .number{color:#71807c;font-size:10px}.card h3{margin:16px 0 6px;color:var(--cream);font:900 23px "Arial Black",Arial,sans-serif;text-transform:uppercase}.card p{color:#94a19b;font:11px/1.45 "Courier New",monospace;margin:0}.visual{height:48px;display:grid;place-items:center;color:var(--cyan);font:700 22px "Courier New",monospace;letter-spacing:8px;text-shadow:12px 10px 0 var(--yellow)}.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px}.tag{color:#82918c;font-size:9px;border:1px solid #3b494f;padding:4px 6px;text-transform:uppercase}.open{color:var(--yellow);font:10px "Courier New",monospace;text-transform:uppercase}
+    .play{border-top:1px solid rgba(229,224,209,.12);padding:90px 0 120px}.play-layout{display:grid;grid-template-columns:.8fr 1.2fr;gap:7vw;align-items:start}.intro{padding-top:12px;position:sticky;top:28px}.intro .eyebrow{color:var(--cyan)}.intro h2{margin-top:19px}.intro p{max-width:330px;color:#94a19b;font-size:14px;line-height:1.65}.controls-note{margin-top:34px;padding-top:17px;border-top:1px solid rgba(229,224,209,.12);color:#82918c;font-size:10px;line-height:1.6;text-transform:uppercase}
+    .machine{background:var(--panel);border:1px solid #455158;padding:17px 17px 24px;box-shadow:11px 11px 0 rgba(22,122,129,.28)}.top{display:flex;justify-content:space-between;color:#9ba69f;font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding-bottom:14px}.online{color:var(--cyan)}
+    .game-window{background:#061014;border:7px solid #111a1d;position:relative;outline:1px solid #4f6265;cursor:pointer}.game-window:before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(100,215,200,.06) 6px)}
+    #board{display:grid;grid-template-columns:repeat(18,1fr);aspect-ratio:1.25;width:100%;gap:1px;padding:5px;background-color:#061014;background-image:linear-gradient(rgba(100,215,200,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(100,215,200,.06) 1px,transparent 1px)}
+    #invader-canvas{display:none;width:100%;aspect-ratio:1.25;background:#061014;image-rendering:pixelated}
+    .game-hidden{display:none!important}
+    .cell{min-width:0;position:relative}.cell.body:after,.cell.head:after,.cell.food:after{content:"";position:absolute}.cell.body:after{inset:1px;background:#57c9b9;box-shadow:0 0 7px #57c9b9}.cell.head:after{inset:0;background:var(--yellow);box-shadow:0 0 12px var(--yellow)}.cell.food:after{width:48%;height:48%;left:26%;top:26%;background:var(--red);box-shadow:0 0 11px var(--red);transform:rotate(45deg);animation:pulse .75s ease-in-out infinite alternate}
+    .overlay{position:absolute;inset:0;z-index:4;display:grid;place-items:center;text-align:center;background:rgba(3,12,15,.72)}.overlay.hidden{display:none}.overlay div{border:1px solid rgba(100,215,200,.6);background:rgba(5,22,25,.9);padding:20px 30px}.overlay strong{display:block;color:var(--yellow);font:900 22px Arial;text-transform:uppercase}.overlay span{color:#9ba69f;font:10px "Courier New",monospace;text-transform:uppercase}
+    .machine-controls{display:flex;justify-content:space-between;align-items:center;padding-top:18px}.scores{display:flex;gap:21px}.score-item{display:flex;flex-direction:column;gap:4px}.score-label{color:#788580;font-size:9px;text-transform:uppercase}.score{color:var(--cream);font:20px "Courier New",monospace}.score.accent{color:var(--yellow)}.buttons{display:flex;gap:7px}.btn,.touch{border:1px solid #526168;background:#263338;color:#c5cdc4;min-height:36px;padding:0 12px;cursor:pointer;font:10px "Courier New",monospace;text-transform:uppercase}.btn:hover{border-color:var(--yellow);color:var(--yellow)}.btn:disabled,.touch:disabled{cursor:not-allowed;opacity:.38;border-color:#455158;color:#788580}
+    .touches{display:none;margin:19px auto 0;width:145px;grid-template-columns:repeat(3,43px);grid-template-rows:repeat(2,37px);gap:5px;justify-content:center}.touch{color:var(--yellow);font-size:16px;padding:0}.touch:nth-child(1){grid-column:2}.touch:nth-child(2){grid-column:1;grid-row:2}.touch:nth-child(3){grid-column:2;grid-row:2}.touch:nth-child(4){grid-column:3;grid-row:2}
+    footer{border-top:1px solid rgba(229,224,209,.12);padding:26px 0 36px;display:flex;justify-content:space-between;gap:15px;color:#65736f;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.hot{color:var(--red)}
+    @keyframes blink{0%,45%,100%{opacity:1}50%,60%{opacity:.35}}@keyframes drift{50%{transform:translate(-9px,15px)}}@keyframes pulse{from{opacity:.6;transform:scale(.65) rotate(45deg)}to{opacity:1;transform:scale(1) rotate(45deg)}}
+    @media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:60px}.monitor{justify-self:start;margin-top:5px}.grid{grid-template-columns:repeat(2,1fr)}.card:first-child{grid-row:span 1;min-height:190px}.play-layout{grid-template-columns:1fr;gap:34px}.intro{position:static}}
+    @media(max-width:560px){.shell{padding:0 19px}header{height:68px}nav{display:none}.signal{font-size:8px}.hero{min-height:auto;padding:60px 0 55px}h1{max-width:100%;font-size:clamp(2.45rem,9.8vw,3.2rem);line-height:.92}.hero-copy{font-size:14px}.monitor{width:calc(100% - 12px);margin-left:5px}.catalog{padding-bottom:80px}.catalog-head{align-items:start;flex-direction:column}.catalog-note{text-align:left}.grid{grid-template-columns:1fr 1fr;gap:8px}.card{min-height:174px;padding:13px}.card h3{font-size:17px}.card p{font-size:9px}.machine{padding:10px 10px 18px;box-shadow:6px 6px 0 rgba(22,122,129,.28)}.game-window{border-width:4px}.machine-controls{align-items:flex-end;flex-direction:column;gap:16px}.buttons{width:100%}.btn{flex:1}.touches{display:grid}footer{flex-direction:column;line-height:1.7}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <div class="ambient a"></div><div class="ambient b"></div>
+  <div class="shell">
+    <header>
+      <a class="brand" href="#inicio"><span class="brand-mark">×</span><span><b class="brand-name">Voltage Archive</b><small class="brand-sub">coleção 1982 — 1989</small></span></a>
+      <nav><a href="#catalogo">catálogo</a><a href="#jogar">jogar</a><a href="#sobre">sobre o arquivo</a></nav>
+      <div class="signal"><span class="dot"></span>sinal estável</div>
+    </header>
+    <section class="hero" id="inicio">
+      <div><div class="eyebrow">arquivo aberto // estação 04</div><h1>Pequenas telas.<em>Grandes mundos.</em></h1><p class="hero-copy">Uma coleção digital para quem ainda ouve o clique de uma tecla e sabe que, às vezes, um punhado de pixels é tudo que você precisa para desaparecer por uma hora.</p><div class="meta"><span><strong>06</strong> máquinas catalogadas</span><span><strong>01</strong> pronta agora</span><span><strong>100%</strong> sem fichas</span></div></div>
+      <div class="monitor"><div class="screen"><div class="hud"><span>VOLTAGE // 04</span><span>● RUN</span></div></div><div class="label"><span>CRT-14 / verde fósforo</span><span>1984</span></div></div>
+    </section>
+    <section class="catalog" id="catalogo">
+      <div class="rule">fitas disponíveis / 06 unidades</div><div class="catalog-head"><h2>Escolha uma memória</h2><p class="catalog-note">Cada máquina foi reconstruída com respeito ao original e um pouco mais de espaço para respirar.</p></div>
+      <div class="grid" id="game-grid"></div>
+    </section>
+    <section class="play" id="jogar">
+      <div class="play-layout">
+        <div class="intro"><div class="eyebrow">estação ativa // <span id="active-title">Snake</span></div><h2 id="active-heading">Uma tecla de cada vez.</h2><p id="active-copy">O Snake é o primeiro cartucho conectado ao arquivo. Pegue os pontos, cresça com cuidado e tente não encostar nas paredes — elas ainda são de metal.</p><div class="controls-note" id="controls-copy"><strong>controles de bancada</strong><br>setas ou WASD para mover<br>espaço para pausar / continuar</div></div>
+        <div class="machine">
+          <div class="top"><span id="machine-program">snake.exe / revisão 1.04</span><span class="online">● online</span></div>
+          <div class="game-window" id="game-window" role="application" aria-label="Estação de jogos"><div id="board"></div><canvas id="invader-canvas" width="720" height="560"></canvas><div class="overlay" id="overlay"><div><strong id="overlay-title">Pronto para jogar?</strong><span id="overlay-text">Pressione iniciar ou uma direção</span></div></div></div>
+          <div class="machine-controls"><div class="scores"><div class="score-item"><span class="score-label">pontuação</span><strong class="score" id="score">0000</strong></div><div class="score-item"><span class="score-label">recorde local</span><strong class="score accent" id="record">0000</strong></div></div><div class="buttons"><button class="btn" id="pause">▶ iniciar</button><button class="btn" id="restart">↻ reiniciar</button></div></div>
+          <div class="touches" aria-label="Controles direcionais"><button class="touch" data-dir="up" aria-label="Cima">↑</button><button class="touch" data-dir="left" aria-label="Esquerda">←</button><button class="touch" data-dir="down" aria-label="Baixo">↓</button><button class="touch" data-dir="right" aria-label="Direita">→</button></div>
+        </div>
+      </div>
+    </section>
+    <footer id="sobre"><span>Voltage Archive / feito para durar mais que a bateria</span><span class="hot">Gazstao 2026 - sem anúncios - sem fichas - só mais uma partida</span><span>© 1984 — 2024</span></footer>
+  </div>
+</main>
+<script>
+(() => {
+  "use strict";
+  const games=[
+    ["01","Pong","Dois remos. Uma bola. Nenhuma desculpa.","jogável agora","◇ — ◇"],
+    ["02","Snake","O clássico que nunca para de crescer.","jogável agora","■ ■ ◆"],
+    ["03","Breakout","Quebre tudo. Deixe a gravidade trabalhar.","jogável agora","▦ ▦ ▦"],
+    ["04","Space Invaders","Eles chegaram. Você ainda tem uma nave.","jogável agora","▼ ▼ ▼"],
+    ["05","Asteroids","Gire, acelere, sobreviva ao vazio.","jogável agora","◇ ◇ ◇"],
+    ["06","Lunar Lander","Pouco combustível. Pouso perfeito.","jogável agora","△ — △"]
+  ];
+  const grid=document.getElementById("game-grid");
+  let selectedGame=1;
+  const activeTitle=document.getElementById("active-title"),activeHeading=document.getElementById("active-heading"),activeCopy=document.getElementById("active-copy"),controlsCopy=document.getElementById("controls-copy"),machineProgram=document.getElementById("machine-program");
+  games.forEach((g,i)=>{
+    const card=document.createElement("article");
+    card.className="card"+(i===1?" selected":"");
+      card.innerHTML=`<div><div class="number">${g[0]} / VOLTAGE ARCHIVE</div><h3>${g[1]}</h3><p>${g[2]}</p></div><div class="visual">${g[4]}</div><div class="card-foot"><span class="tag">${g[3]}</span><span class="open">abrir estação →</span></div>`;
+    card.addEventListener("click",()=>{
+      document.querySelectorAll(".card").forEach(c=>c.classList.remove("selected"));
+      card.classList.add("selected");
+      selectedGame=i;
+      activeTitle.textContent=g[1];
+      if(i===1){
+        machineProgram.textContent="snake.exe / revisão 1.04";
+        activeHeading.textContent="Uma tecla de cada vez.";
+        activeCopy.textContent="O Snake é o primeiro cartucho conectado ao arquivo. Pegue os pontos, cresça com cuidado e tente não encostar nas paredes — elas ainda são de metal.";
+        controlsCopy.innerHTML="<strong>controles de bancada</strong><br>setas ou WASD para mover<br>espaço para pausar / continuar";
+        reset(false);
+      }else if(i===3){
+        machineProgram.textContent="invaders.rom / revisão 2.01";
+        activeHeading.textContent="Eles chegaram.";
+        activeCopy.textContent="Defenda a estação da formação invasora. Mova a nave, abra caminho com seus disparos e não deixe a frota alcançar a linha de defesa.";
+        controlsCopy.innerHTML="<strong>controles de defesa</strong><br>setas ou A/D para mover<br>espaço ou ↑ para disparar<br>ESC para pausar";
+        resetInvaders(false);
+      }else if(i===0){
+        machineProgram.textContent="pong.rom / revisão 1.20";
+        activeHeading.textContent="Devolva o saque.";
+        activeCopy.textContent="Enfrente o computador em uma partida até sete pontos. Controle sua raquete, leia o ângulo e nunca tire os olhos da bola.";
+        controlsCopy.innerHTML="<strong>controles de bancada</strong><br>↑ ↓ ou W/S para mover a raquete<br>espaço para pausar / continuar";
+        resetArcade(false);
+      }else if(i===2){
+        machineProgram.textContent="breakout.rom / revisão 1.11";
+        activeHeading.textContent="Quebre o silêncio.";
+        activeCopy.textContent="Rebata a bola contra a muralha de blocos. Você tem três vidas e uma única missão: limpar a tela.";
+        controlsCopy.innerHTML="<strong>controles de bancada</strong><br>← → ou A/D para mover a raquete<br>espaço para pausar / continuar";
+        resetArcade(false);
+      }else if(i===4){
+        machineProgram.textContent="asteroids.rom / revisão 3.07";
+        activeHeading.textContent="Sobreviva ao vazio.";
+        activeCopy.textContent="Gire, acelere e dispare. Os asteroides dão a volta na tela e os grandes podem se partir em fragmentos menores.";
+        controlsCopy.innerHTML="<strong>controles de voo</strong><br>← → giram, ↑ propulsiona, espaço dispara<br>ESC para pausar / continuar";
+        resetArcade(false);
+      }else if(i===5){
+        machineProgram.textContent="lander.rom / revisão 1.08";
+        activeHeading.textContent="Pouse com precisão.";
+        activeCopy.textContent="A gravidade não perdoa. Gire e use o propulsor para tocar a plataforma suavemente antes que o combustível termine.";
+        controlsCopy.innerHTML="<strong>controles de pouso</strong><br>← → giram, ↑ propulsiona, espaço para pausar / continuar";
+        resetArcade(false);
+      }else{
+        machineProgram.textContent=`${g[1].toLowerCase().replaceAll(" ","-")}.rom / catalogado`;
+        activeCopy.textContent=`${g[1]} está conectado à estação e pronto para jogar.`;
+        resetArcade(false);
+      }
+      document.getElementById("jogar").scrollIntoView({behavior:"smooth"});
+    });
+    grid.appendChild(card);
+  });
+
+  const COLS=18,ROWS=14,initial=[{x:8,y:7},{x:7,y:7},{x:6,y:7}];
+  const board=document.getElementById("board"),invaderCanvas=document.getElementById("invader-canvas"),ctx=invaderCanvas.getContext("2d"),overlay=document.getElementById("overlay");
+  const title=document.getElementById("overlay-title"),text=document.getElementById("overlay-text");
+  const scoreEl=document.getElementById("score"),recordEl=document.getElementById("record");
+  const pause=document.getElementById("pause");
+  let snake=[...initial],food={x:13,y:5},dir="right",status="idle",score=0,timer=null;
+  let record=Number(localStorage.getItem("voltage-archive-record")||0),invaderFrame=null,arcadeFrame=null,lastArcade=0;
+  let invaders=[],shots=[],enemyShots=[],player={x:336,y:510,w:48,h:20},invaderDirection=1,invaderDrop=0,invaderKeys={left:false,right:false},lives=3,lastFrame=0,lastEnemyShot=0;
+  let pong={paddle:245,ball:{x:360,y:280,vx:260,vy:145},cpu:245},breakout,ship,lander;
+  recordEl.textContent=String(record).padStart(4,"0");
+
+  for(let i=0;i<COLS*ROWS;i++){const cell=document.createElement("div");cell.className="cell";board.appendChild(cell)}
+  const cells=[...board.children];
+  function render(){
+    const playingInvaders=selectedGame===3, playingArcade=[0,2,4,5].includes(selectedGame);
+    board.classList.toggle("game-hidden",playingInvaders||playingArcade);
+    invaderCanvas.style.display=(playingInvaders||playingArcade)?"block":"none";
+    cells.forEach(c=>c.className="cell");
+    if(selectedGame===1){snake.forEach((p,i)=>cells[p.y*COLS+p.x]?.classList.add(i===0?"head":"body"));cells[food.y*COLS+food.x]?.classList.add("food")}
+    scoreEl.textContent=String(score).padStart(4,"0");recordEl.textContent=String(record).padStart(4,"0");
+    overlay.classList.toggle("hidden",status==="playing");
+    if(status==="idle"){title.textContent=playingInvaders?"Defenda a estação":playingArcade?"Estação pronta":"Pronto para jogar?";text.textContent=playingInvaders||playingArcade?"Pressione iniciar para começar":"Pressione iniciar ou uma direção"}
+    if(status==="paused"){title.textContent="Pausa de bancada";text.textContent="Pressione continuar para voltar"}
+    if(status==="over"){title.textContent=playingInvaders?"Defesa encerrada":"Fim de fita";text.textContent="Reinicie para tentar outra vez"}
+    if(status==="won"){
+      const wins=[
+        ["Partida encerrada","Você venceu o computador"],
+        ["Fita completa","Recorde registrado"],
+        ["Muralha eliminada","Todos os blocos foram destruídos"],
+        ["Setor protegido","A formação invasora foi eliminada"],
+        ["Cinturão limpo","Todos os asteroides foram destruídos"],
+        ["Pouso confirmado","Contato suave com a plataforma"]
+      ];
+      title.textContent=wins[selectedGame][0];text.textContent=wins[selectedGame][1];
+    }
+    if(status==="unavailable"){title.textContent=`${games[selectedGame][1]} selecionado`;text.textContent="Cartucho conectado"}
+    pause.textContent=status==="playing"?"Ⅱ pausar":status==="paused"?"▶ continuar":"▶ iniciar";
+    pause.disabled=false;document.getElementById("restart").disabled=false;
+    if(playingInvaders)drawInvaders();
+    if(playingArcade)drawArcade();
+  }
+  function randomFood(){
+    const free=[];for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(!snake.some(p=>p.x===x&&p.y===y))free.push({x,y});
+    return free[Math.floor(Math.random()*free.length)]||{x:13,y:5};
+  }
+  function stop(){if(timer){clearInterval(timer);timer=null}if(invaderFrame){cancelAnimationFrame(invaderFrame);invaderFrame=null}if(arcadeFrame){cancelAnimationFrame(arcadeFrame);arcadeFrame=null}}
+  function start(){status="playing";stop();timer=setInterval(step,142);render()}
+  function reset(begin=false){stop();snake=initial.map(p=>({...p}));food={x:13,y:5};dir="right";score=0;status=begin?"playing":"idle";if(begin)start();else render()}
+  function finish(){stop();status="over";if(score>record){record=score;localStorage.setItem("voltage-archive-record",String(record))}render()}
+  function step(){
+    const h=snake[0],next={x:h.x+(dir==="left"?-1:dir==="right"?1:0),y:h.y+(dir==="up"?-1:dir==="down"?1:0)};
+    if(next.x<0||next.x>=COLS||next.y<0||next.y>=ROWS||snake.some(p=>p.x===next.x&&p.y===next.y)){finish();return}
+    const ate=next.x===food.x&&next.y===food.y;snake.unshift(next);
+    if(ate){score+=10;if(score>record){record=score;localStorage.setItem("voltage-archive-record",String(record))}food=randomFood()}else snake.pop();
+    render();
+  }
+  function bump(n){if(n>record){record=n;localStorage.setItem("voltage-archive-record",String(record))}}
+  function resetArcade(begin){
+    stop();score=0;lives=3;
+    pong={paddle:245,ball:{x:360,y:280,vx:260,vy:145},cpu:245};pongScore=0;
+    breakout={paddle:320,ball:{x:360,y:470,vx:210,vy:-230},bricks:[],lives:3};
+    for(let r=0;r<5;r++)for(let c=0;c<10;c++)breakout.bricks.push({x:65+c*60,y:55+r*25,w:52,h:16,alive:true});
+    ship={x:360,y:280,a:-Math.PI/2,vx:0,vy:0,cool:0,shots:[],rocks:[]};
+    for(let i=0;i<6;i++){const a=i*1.047;ship.rocks.push({x:90+(i%3)*240,y:90+Math.floor(i/3)*300,vx:Math.cos(a)*35,vy:Math.sin(a)*35,r:24,size:2})}
+    lander={x:360,y:70,vx:0,vy:0,a:-Math.PI/2,fuel:100,platform:{x:295,y:480,w:130},safe:false};
+    status=begin?"playing":"idle"; if(begin)startArcade(); else render();
+  }
+  function startArcade(){status="playing";stop();lastArcade=performance.now();arcadeFrame=requestAnimationFrame(arcadeLoop);render()}
+  function arcadeLoop(now){if(status!=="playing"||![0,2,4,5].includes(selectedGame))return;const dt=Math.min(.035,(now-lastArcade)/1000);lastArcade=now;updateArcade(dt);drawArcade();if(status==="playing")arcadeFrame=requestAnimationFrame(arcadeLoop)}
+  function updateArcade(dt){
+    const c=invaderCanvas;
+    if(selectedGame===0){if(arcadeKeys.up)pong.paddle-=330*dt;if(arcadeKeys.down)pong.paddle+=330*dt;pong.paddle=Math.max(12,Math.min(478,pong.paddle));pong.cpu+=(pong.ball.y-35-pong.cpu)*Math.min(1,dt*2);let b=pong.ball;b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.y<10||b.y>550){b.vy*=-1;b.y=Math.max(10,Math.min(550,b.y))}if(b.x<38&&b.x>20&&b.y>pong.paddle&&b.y<pong.paddle+70){b.vx=Math.abs(b.vx)*1.04;b.vy+=(b.y-pong.paddle-35)*3}if(b.x>682&&b.x<700&&b.y>pong.cpu&&b.y<pong.cpu+70)b.vx=-Math.abs(b.vx)*1.04;if(b.x<0||b.x>720){const missedLeft=b.x<0;if(missedLeft)pongScore++;else score++;b.x=360;b.y=280;b.vx=missedLeft?260:-260;if(score>=7||pongScore>=7){bump(score*100);status=score>=7?"won":"over";stop();render()}else scoreEl.textContent=String(score).padStart(4,"0")}}
+    if(selectedGame===2){let b=breakout.ball;if(arcadeKeys.left)breakout.paddle-=390*dt;if(arcadeKeys.right)breakout.paddle+=390*dt;breakout.paddle=Math.max(15,Math.min(640,breakout.paddle));b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.x<8||b.x>712){b.vx*=-1;b.x=Math.max(8,Math.min(712,b.x))}if(b.y<8)b.vy=Math.abs(b.vy);if(b.y>535&&b.x>breakout.paddle&&b.x<breakout.paddle+65)b.vy=-Math.abs(b.vy);breakout.bricks.forEach(q=>{if(q.alive&&b.x>q.x&&b.x<q.x+q.w&&b.y>q.y&&b.y<q.y+q.h){q.alive=false;b.vy*=-1;score+=10;bump(score)}});if(b.y>570){breakout.lives--;if(breakout.lives<=0){status="over";stop();render()}else{b.x=360;b.y=470;b.vy=-230}}if(!breakout.bricks.some(q=>q.alive)){status="won";bump(score+100);stop();render()}}
+    if(selectedGame===4){const s=ship;s.a+=(arcadeKeys.left?-3.5:0)*dt+(arcadeKeys.right?3.5:0)*dt;if(arcadeKeys.up){s.vx+=Math.cos(s.a)*180*dt;s.vy+=Math.sin(s.a)*180*dt}s.x=(s.x+s.vx*dt+720)%720;s.y=(s.y+s.vy*dt+560)%560;s.vx*=.998;s.vy*=.998;s.cool-=dt;s.shots.forEach(q=>{q.x=(q.x+q.vx*dt+720)%720;q.y=(q.y+q.vy*dt+560)%560;q.life-=dt});s.shots=s.shots.filter(q=>q.life>0);s.rocks.forEach(r=>{r.x=(r.x+r.vx*dt+720)%720;r.y=(r.y+r.vy*dt+560)%560});s.rocks.forEach(r=>s.shots.forEach(q=>{if(Math.hypot(q.x-r.x,q.y-r.y)<r.r){r.dead=true;q.life=0;score+=r.size*20;bump(score);if(r.size>1){s.rocks.push({x:r.x,y:r.y,vx:55,vy:-45,r:14,size:1})}}}));s.rocks=s.rocks.filter(r=>!r.dead);if(s.rocks.some(r=>Math.hypot(r.x-s.x,r.y-s.y)<r.r+12)){lives--;s.x=360;s.y=280;s.vx=s.vy=0;if(lives<=0){status="over";stop();render()}}if(!s.rocks.length){status="won";bump(score+100);stop();render()}}
+    if(selectedGame===5){const l=lander;l.a+=(arcadeKeys.left?-2.2:0)*dt+(arcadeKeys.right?2.2:0)*dt;if(arcadeKeys.up&&l.fuel>0){l.vx+=Math.cos(l.a)*24*dt;l.vy+=Math.sin(l.a)*24*dt;l.fuel=Math.max(0,l.fuel-18*dt)}l.vy+=8*dt;l.x+=l.vx*dt;l.y+=l.vy*dt;l.x=Math.max(10,Math.min(710,l.x));if(l.y>470){const upright=Math.abs(Math.cos(l.a))<.35&&Math.sin(l.a)<0;if(l.x>l.platform.x&&l.x<l.platform.x+l.platform.w&&Math.abs(l.vy)<45&&Math.abs(l.vx)<35&&upright){status="won";score=500+Math.floor(l.fuel);bump(score);stop();render()}else{status="over";stop();render()}}}
+    scoreEl.textContent=String(score).padStart(4,"0");recordEl.textContent=String(record).padStart(4,"0");
+  }
+  let pongScore=0;const arcadeKeys={up:false,down:false,left:false,right:false};
+  function drawArcade(){const c=ctx;c.fillStyle="#061014";c.fillRect(0,0,720,560);c.strokeStyle="rgba(100,215,200,.12)";c.setLineDash([4,12]);c.beginPath();c.moveTo(360,0);c.lineTo(360,560);c.stroke();c.setLineDash([]);c.fillStyle="#f3e7bd";
+    if(selectedGame===0){c.fillRect(25,pong.paddle,13,70);c.fillRect(682,pong.cpu,13,70);c.fillRect(pong.ball.x-6,pong.ball.y-6,12,12);c.font="22px Courier New";c.fillText(score+"   "+pongScore,325,35)}
+    if(selectedGame===2){c.fillStyle="#64d7c8";breakout.bricks.forEach(q=>{if(q.alive)c.fillRect(q.x,q.y,q.w,q.h)});c.fillStyle="#f5cf59";c.fillRect(breakout.paddle,535,65,12);c.fillRect(breakout.ball.x-6,breakout.ball.y-6,12,12);c.fillStyle="#82918c";c.font="15px Courier New";c.fillText("VIDAS "+breakout.lives,20,545)}
+    if(selectedGame===4){const s=ship;c.save();c.translate(s.x,s.y);c.rotate(s.a);c.strokeStyle="#f3e7bd";c.beginPath();c.moveTo(17,0);c.lineTo(-13,-10);c.lineTo(-8,0);c.lineTo(-13,10);c.closePath();c.stroke();c.restore();c.fillStyle="#f5cf59";s.shots.forEach(q=>c.fillRect(q.x-2,q.y-2,4,4));s.rocks.forEach(r=>{c.strokeStyle="#64d7c8";c.beginPath();c.arc(r.x,r.y,r.r,0,Math.PI*2);c.stroke()})}
+    if(selectedGame===5){const l=lander;c.strokeStyle="#49605f";c.beginPath();c.moveTo(0,500);c.lineTo(90,486);c.lineTo(180,507);c.lineTo(270,492);c.lineTo(450,492);c.lineTo(550,506);c.lineTo(650,487);c.lineTo(720,500);c.stroke();c.strokeStyle="#f5cf59";c.beginPath();c.moveTo(l.platform.x,l.platform.y);c.lineTo(l.platform.x+l.platform.w,l.platform.y);c.stroke();c.save();c.translate(l.x,l.y);c.rotate(l.a+Math.PI/2);c.strokeStyle="#f3e7bd";c.beginPath();c.moveTo(0,-16);c.lineTo(-12,12);c.lineTo(12,12);c.closePath();c.stroke();c.restore();c.fillStyle="#f5cf59";c.font="15px Courier New";c.fillText("COMBUSTÍVEL "+Math.ceil(l.fuel),20,30);c.fillStyle="#82918c";c.fillText("GRAVIDADE 0.16G",20,53);c.fillText("VEL. VERTICAL "+l.vy.toFixed(1),20,76)}
+  }
+  function setDir(next){
+    if(selectedGame!==1)return;
+    const opposite={up:"down",down:"up",left:"right",right:"left"};
+    if(opposite[dir]!==next){dir=next;if(status==="idle")start()}
+  }
+  function makeInvaders(){
+    const fleet=[];for(let row=0;row<4;row++)for(let col=0;col<9;col++)fleet.push({x:74+col*62,y:62+row*48,w:34,h:23,row,alive:true});
+    return fleet;
+  }
+  function resetInvaders(begin=false){
+    stop();invaders=makeInvaders();shots=[];enemyShots=[];player={x:336,y:510,w:48,h:20};invaderDirection=1;invaderDrop=0;lives=3;score=0;lastFrame=0;lastEnemyShot=0;status=begin?"playing":"idle";
+    if(begin)startInvaders();else render();
+  }
+  function startInvaders(){status="playing";stop();lastFrame=performance.now();invaderFrame=requestAnimationFrame(invaderLoop);render()}
+  function fireInvaderShot(){if(selectedGame!==3||status!=="playing"||shots.length>2)return;shots.push({x:player.x+player.w/2-2,y:player.y-10,w:4,h:13})}
+  function invaderLoop(now){
+    if(status!=="playing"||selectedGame!==3)return;
+    const dt=Math.min((now-lastFrame)/1000,.04);lastFrame=now;updateInvaders(dt,now);drawInvaders();
+    if(status==="playing")invaderFrame=requestAnimationFrame(invaderLoop);
+  }
+  function updateInvaders(dt,now){
+    if(invaderKeys.left)player.x=Math.max(12,player.x-310*dt);
+    if(invaderKeys.right)player.x=Math.min(720-player.w-12,player.x+310*dt);
+    const alive=invaders.filter(v=>v.alive),speed=28+(36-alive.length)*1.8;
+    let edge=false;alive.forEach(v=>{v.x+=invaderDirection*speed*dt;if(v.x<15||v.x+v.w>705)edge=true});
+    if(edge){invaderDirection*=-1;alive.forEach(v=>{v.x+=invaderDirection*speed*dt;v.y+=13});invaderDrop+=13}
+    shots.forEach(s=>s.y-=430*dt);enemyShots.forEach(s=>s.y+=235*dt);
+    shots.forEach(s=>alive.forEach(v=>{if(v.alive&&s.x<v.x+v.w&&s.x+s.w>v.x&&s.y<v.y+v.h&&s.y+s.h>v.y){v.alive=false;s.dead=true;score+=v.row<1?30:v.row<3?20:10;if(score>record){record=score;localStorage.setItem("voltage-archive-record",String(record))}}}));
+    if(now-lastEnemyShot>900&&alive.length){const low=alive[Math.floor(Math.random()*alive.length)];enemyShots.push({x:low.x+low.w/2,y:low.y+low.h,w:4,h:12});lastEnemyShot=now}
+    enemyShots.forEach(s=>{if(s.x<player.x+player.w&&s.x+s.w>player.x&&s.y<player.y+player.h&&s.y+s.h>player.y){s.dead=true;lives--;player.x=336;if(lives<=0){status="over";stop();render()}}});
+    shots=shots.filter(s=>s.y>-20&&!s.dead);enemyShots=enemyShots.filter(s=>s.y<580&&!s.dead);
+    if(alive.some(v=>v.y+v.h>=player.y)){status="over";stop();render()}
+    if(invaders.every(v=>!v.alive)){status="won";stop();render()}
+    scoreEl.textContent=String(score).padStart(4,"0");recordEl.textContent=String(record).padStart(4,"0");
+  }
+  function drawInvaders(){
+    ctx.fillStyle="#061014";ctx.fillRect(0,0,720,560);
+    ctx.strokeStyle="rgba(100,215,200,.08)";ctx.lineWidth=1;for(let x=0;x<720;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,560);ctx.stroke()}for(let y=0;y<560;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(720,y);ctx.stroke()}
+    invaders.filter(v=>v.alive).forEach(v=>{ctx.fillStyle=v.row<1?"#f5cf59":"#64d7c8";ctx.fillRect(v.x+6,v.y,v.w-12,5);ctx.fillRect(v.x,v.y+6,v.w,11);ctx.fillRect(v.x+5,v.y+17,7,6);ctx.fillRect(v.x+v.w-12,v.y+17,7,6);ctx.fillStyle="#061014";ctx.fillRect(v.x+8,v.y+9,5,4);ctx.fillRect(v.x+v.w-13,v.y+9,5,4)});
+    ctx.fillStyle="#f3e7bd";ctx.fillRect(player.x+10,player.y+8,player.w-20,12);ctx.fillRect(player.x+20,player.y,8,10);ctx.fillRect(player.x,player.y+15,player.w,5);
+    ctx.fillStyle="#f5cf59";shots.forEach(s=>ctx.fillRect(s.x,s.y,s.w,s.h));ctx.fillStyle="#f05c45";enemyShots.forEach(s=>ctx.fillRect(s.x,s.y,s.w,s.h));
+    ctx.fillStyle="#82918c";ctx.font="16px Courier New";ctx.fillText(`VIDAS ${"■".repeat(Math.max(0,lives))}`,18,535);
+  }
+  document.addEventListener("keydown",e=>{
+    const keys={ArrowUp:"up",w:"up",W:"up",ArrowDown:"down",s:"down",S:"down",ArrowLeft:"left",a:"left",A:"left",ArrowRight:"right",d:"right",D:"right"};
+    if(keys[e.key]&&selectedGame===1){e.preventDefault();setDir(keys[e.key])}
+    if([0,2,4,5].includes(selectedGame)&&keys[e.key]){e.preventDefault();arcadeKeys[keys[e.key]]=true;if(status==="idle")startArcade()}
+    if([0,2,4,5].includes(selectedGame)&&e.key===" "){e.preventDefault();if(selectedGame===4&&status==="playing"&&ship.cool<=0){ship.shots.push({x:ship.x+Math.cos(ship.a)*18,y:ship.y+Math.sin(ship.a)*18,vx:Math.cos(ship.a)*430,vy:Math.sin(ship.a)*430,life:1.6});ship.cool=.22}else if(status==="playing"){stop();status="paused";render()}else if(status==="paused")startArcade();else resetArcade(true)}
+    if(selectedGame===3&&(e.key==="ArrowLeft"||e.key==="a"||e.key==="A")){e.preventDefault();invaderKeys.left=true;if(status==="idle")startInvaders()}
+    if(selectedGame===3&&(e.key==="ArrowRight"||e.key==="d"||e.key==="D")){e.preventDefault();invaderKeys.right=true;if(status==="idle")startInvaders()}
+    if(selectedGame===3&&(e.key===" "||e.key==="ArrowUp"||e.key==="w"||e.key==="W")){e.preventDefault();if(status==="idle")startInvaders();else fireInvaderShot()}
+    if(selectedGame===1&&(e.key===" "||e.key==="Escape")){e.preventDefault();if(status==="playing"){stop();status="paused";render()}else if(status==="paused")start()}
+    if(selectedGame===3&&e.key==="Escape"){e.preventDefault();if(status==="playing"){stop();status="paused";render()}else if(status==="paused")startInvaders()}
+    if([0,2,4,5].includes(selectedGame)&&e.key==="Escape"){e.preventDefault();if(status==="playing"){stop();status="paused";render()}else if(status==="paused")startArcade()}
+  });
+  document.addEventListener("keyup",e=>{if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A")invaderKeys.left=false;if(e.key==="ArrowRight"||e.key==="d"||e.key==="D")invaderKeys.right=false;const k={ArrowUp:"up",w:"up",W:"up",ArrowDown:"down",s:"down",S:"down",ArrowLeft:"left",a:"left",A:"left",ArrowRight:"right",d:"right",D:"right"}[e.key];if(k)arcadeKeys[k]=false});
+  document.querySelectorAll("[data-dir]").forEach(b=>{
+     b.addEventListener("pointerdown",e=>{e.preventDefault();const d=b.dataset.dir;if(selectedGame===1)setDir(d);else if(selectedGame===3){if(status==="idle")startInvaders();if(d==="left")invaderKeys.left=true;if(d==="right")invaderKeys.right=true;if(d==="up")fireInvaderShot()}else if([0,2,4,5].includes(selectedGame)){if(status==="idle")startArcade();arcadeKeys[d]=true;if(d==="up"&&selectedGame===4&&ship.cool<=0){ship.shots.push({x:ship.x+Math.cos(ship.a)*18,y:ship.y+Math.sin(ship.a)*18,vx:Math.cos(ship.a)*430,vy:Math.sin(ship.a)*430,life:1.6});ship.cool=.22}}});
+     b.addEventListener("pointerup",()=>{invaderKeys.left=false;invaderKeys.right=false;arcadeKeys[b.dataset.dir]=false});
+     b.addEventListener("pointerleave",()=>{invaderKeys.left=false;invaderKeys.right=false;arcadeKeys[b.dataset.dir]=false});
+  });
+   pause.addEventListener("click",()=>{if(selectedGame===1){if(status==="playing"){stop();status="paused";render()}else if(status==="paused")start();else reset(true)}else if(selectedGame===3){if(status==="playing"){stop();status="paused";render()}else if(status==="paused")startInvaders();else resetInvaders(true)}else if([0,2,4,5].includes(selectedGame)){if(status==="playing"){stop();status="paused";render()}else if(status==="paused")startArcade();else resetArcade(true)}});
+   document.getElementById("restart").addEventListener("click",()=>selectedGame===1?reset(false):selectedGame===3?resetInvaders(false):resetArcade(false));
+   document.getElementById("game-window").addEventListener("click",()=>{if(selectedGame===1&&(status==="idle"||status==="over"))reset(true);else if(selectedGame===3&&(status==="idle"||status==="over"||status==="won"))resetInvaders(true);else if([0,2,4,5].includes(selectedGame)&&(status==="idle"||status==="over"||status==="won"))resetArcade(true)});
+  render();
+})();
+</script>
+</body>
+</html>

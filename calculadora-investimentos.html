@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Calculadora de investimentos</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --ink: #111827;
+      --muted: #667085;
+      --line: #e5eaf1;
+      --primary: #2864dc;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eaf1ff;
+      --green: #07855b;
+      --green-soft: #e9f8f1;
+      --shadow: 0 18px 50px rgba(25, 45, 85, .09);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% -10%, rgba(40, 100, 220, .12), transparent 30rem),
+        var(--bg);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 54px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 26px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 11px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 22px;
+      height: 3px;
+      border-radius: 9px;
+      background: var(--primary);
+    }
+
+    h1, h2, p { margin: 0; }
+    h1 {
+      max-width: 650px;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.06;
+      letter-spacing: -.055em;
+    }
+
+    .hero-copy {
+      max-width: 610px;
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      border: 1px solid #d7e3ff;
+      border-radius: 999px;
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid rgba(222, 229, 240, .95);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      position: sticky;
+      top: 18px;
+      padding: 23px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h2 {
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field { margin-bottom: 16px; }
+    .field:last-of-type { margin-bottom: 20px; }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .prefix {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #d8e0eb;
+      border-radius: 11px;
+      outline: none;
+      color: var(--ink);
+      background: #fff;
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    input {
+      padding: 12px 13px;
+    }
+
+    input.with-prefix { padding-left: 37px; }
+    input:focus, select:focus {
+      border-color: #84a9fa;
+      box-shadow: 0 0 0 4px rgba(40, 100, 220, .12);
+    }
+
+    .rate-row {
+      display: grid;
+      grid-template-columns: 1fr 104px;
+      gap: 8px;
+    }
+
+    select {
+      padding: 12px 9px;
+      background-color: #fff;
+    }
+
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+    }
+
+    .primary, .secondary {
+      border: 0;
+      border-radius: 11px;
+      padding: 12px 15px;
+      font-weight: 800;
+      transition: transform .18s, box-shadow .18s, background .18s;
+    }
+
+    .primary {
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 8px 16px rgba(40, 100, 220, .2);
+    }
+
+    .primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .secondary {
+      color: #475467;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+    }
+
+    .secondary:hover { background: #eef2f7; }
+
+    .content { min-width: 0; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 17px 18px;
+      border: 1px solid rgba(222, 229, 240, .95);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(25, 45, 85, .045);
+    }
+
+    .metric-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(1.05rem, 2vw, 1.4rem);
+      font-weight: 850;
+      letter-spacing: -.04em;
+    }
+
+    .metric.positive .metric-value { color: var(--green); }
+
+    .chart-card {
+      padding: 22px 22px 17px;
+      margin-bottom: 20px;
+    }
+
+    .chart-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .chart-heading h2, .table-heading h2 {
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .chart-heading p, .table-heading p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+
+    .dot.blue { background: var(--primary); }
+    .dot.green { background: var(--green); }
+
+    .chart-wrap {
+      position: relative;
+      height: 340px;
+      min-height: 220px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .tooltip {
+      position: absolute;
+      z-index: 2;
+      min-width: 148px;
+      padding: 10px 12px;
+      border: 1px solid #d9e3f2;
+      border-radius: 10px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 10px 25px rgba(24, 39, 75, .14);
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -110%);
+      transition: opacity .12s;
+    }
+
+    .tooltip.visible { opacity: 1; }
+    .tooltip strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .tooltip span { display: block; color: var(--muted); }
+
+    .table-card { overflow: hidden; }
+    .table-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 22px 22px 16px;
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 12px 22px;
+      border-top: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+    tbody tr:hover { background: #fbfcfe; }
+    .gain { color: var(--green); font-weight: 750; }
+    .empty {
+      padding: 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .footnote {
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 22px, 1180px); padding-top: 27px; }
+      .hero { display: block; }
+      .badge { display: inline-flex; margin-top: 18px; }
+      .hero-copy { font-size: 14px; }
+      .controls, .chart-card { padding: 18px; }
+      .metrics { gap: 8px; }
+      .metric { padding: 14px; }
+      .metric-label { font-size: 11px; }
+      .chart-heading { display: block; }
+      .legend { margin-top: 12px; }
+      .table-heading { padding: 18px; }
+      th, td { padding-right: 18px; padding-left: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Planejamento financeiro</div>
+        <h1>Veja seu dinheiro crescer ao longo do tempo.</h1>
+        <p class="hero-copy">Simule o efeito dos aportes mensais e do rendimento composto em uma visão simples, mês a mês.</p>
+      </div>
+      <div class="badge">100% no seu navegador</div>
+    </header>
+
+    <div class="layout">
+      <aside class="card controls">
+        <div class="section-title">
+          <h2>Parâmetros da simulação</h2>
+          <span>Edite e simule</span>
+        </div>
+
+        <form id="investment-form">
+          <div class="field">
+            <label for="initial">Valor inicial</label>
+            <div class="input-wrap">
+              <span class="prefix">R$</span>
+              <input class="with-prefix" id="initial" type="number" min="0" step="100" value="10000" inputmode="decimal">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="monthly">Aporte mensal</label>
+            <div class="input-wrap">
+              <span class="prefix">R$</span>
+              <input class="with-prefix" id="monthly" type="number" min="0" step="50" value="1000" inputmode="decimal">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="rate">Rendimento</label>
+            <div class="rate-row">
+              <div class="input-wrap">
+                <span class="prefix">%</span>
+                <input class="with-prefix" id="rate" type="number" min="-99" step="0.01" value="0.8" inputmode="decimal">
+              </div>
+              <select id="rate-period" aria-label="Periodicidade do rendimento">
+                <option value="monthly">ao mês</option>
+                <option value="yearly">ao ano</option>
+              </select>
+            </div>
+            <div class="hint" id="rate-hint">Taxa efetiva mensal aplicada sobre o saldo.</div>
+          </div>
+
+          <div class="field">
+            <label for="months">Período</label>
+            <div class="input-wrap">
+              <input id="months" type="number" min="1" max="600" step="1" value="60" inputmode="numeric">
+            </div>
+            <div class="hint">Informe a quantidade de meses, até 600.</div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" type="submit">Calcular evolução</button>
+            <button class="secondary" id="reset" type="button">Limpar</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="content" aria-live="polite">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Patrimônio final</span>
+            <strong class="metric-value" id="final-value">—</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Total investido</span>
+            <strong class="metric-value" id="invested-value">—</strong>
+          </div>
+          <div class="metric positive">
+            <span class="metric-label">Rendimento acumulado</span>
+            <strong class="metric-value" id="interest-value">—</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Crescimento do patrimônio</span>
+            <strong class="metric-value" id="growth-value">—</strong>
+          </div>
+        </div>
+
+        <section class="card chart-card">
+          <div class="chart-heading">
+            <div>
+              <h2>Evolução do patrimônio</h2>
+              <p>Comparação entre o que foi investido e o saldo estimado.</p>
+            </div>
+            <div class="legend" aria-label="Legenda do gráfico">
+              <span class="legend-item"><i class="dot blue"></i>Patrimônio</span>
+              <span class="legend-item"><i class="dot green"></i>Total investido</span>
+            </div>
+          </div>
+          <div class="chart-wrap" id="chart-wrap">
+            <canvas id="chart" aria-label="Gráfico de evolução do patrimônio" role="img"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+          </div>
+        </section>
+
+        <section class="card table-card">
+          <div class="table-heading">
+            <div>
+              <h2>Detalhamento mensal</h2>
+              <p>Confira o saldo estimado em cada etapa.</p>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mês</th>
+                  <th>Aporte acumulado</th>
+                  <th>Rendimento no mês</th>
+                  <th>Patrimônio</th>
+                </tr>
+              </thead>
+              <tbody id="result-rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <p class="footnote">Simulação matemática sem considerar impostos, taxas, inflação ou oscilações de mercado. Os valores são estimativas.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const form = document.getElementById('investment-form');
+      const initialInput = document.getElementById('initial');
+      const monthlyInput = document.getElementById('monthly');
+      const rateInput = document.getElementById('rate');
+      const ratePeriod = document.getElementById('rate-period');
+      const monthsInput = document.getElementById('months');
+      const rateHint = document.getElementById('rate-hint');
+      const canvas = document.getElementById('chart');
+      const chartWrap = document.getElementById('chart-wrap');
+      const tooltip = document.getElementById('tooltip');
+      const rows = document.getElementById('result-rows');
+      const ctx = canvas.getContext('2d');
+      let simulation = [];
+
+      const brl = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        maximumFractionDigits: 2
+      });
+
+      const pct = new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+
+      function numberValue(input) {
+        const value = Number.parseFloat(input.value);
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      function formatCompact(value) {
+        const absolute = Math.abs(value);
+        if (absolute >= 1000000) {
+          return `R$ ${(value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+        }
+        if (absolute >= 1000) {
+          return `R$ ${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+        }
+        return brl.format(value);
+      }
+
+      function updateRateHint() {
+        rateHint.textContent = ratePeriod.value === 'yearly'
+          ? 'A taxa anual será convertida para uma taxa efetiva mensal.'
+          : 'Taxa efetiva mensal aplicada sobre o saldo.';
+      }
+
+      function calculate() {
+        const initial = Math.max(0, numberValue(initialInput));
+        const monthly = Math.max(0, numberValue(monthlyInput));
+        const enteredRate = numberValue(rateInput);
+        const months = Math.min(600, Math.max(1, Math.round(numberValue(monthsInput))));
+        const monthlyRate = ratePeriod.value === 'yearly'
+          ? Math.pow(1 + enteredRate / 100, 1 / 12) - 1
+          : enteredRate / 100;
+
+        monthsInput.value = months;
+        let balance = initial;
+        let invested = initial;
+        simulation = [{
+          month: 0,
+          contribution: initial,
+          interest: 0,
+          balance: initial,
+          invested
+        }];
+
+        for (let month = 1; month <= months; month += 1) {
+          const interest = balance * monthlyRate;
+          balance += interest + monthly;
+          invested += monthly;
+          simulation.push({ month, contribution: monthly, interest, balance, invested });
+        }
+
+        const final = simulation[simulation.length - 1];
+        const interestTotal = final.balance - final.invested;
+        document.getElementById('final-value').textContent = brl.format(final.balance);
+        document.getElementById('invested-value').textContent = brl.format(final.invested);
+        document.getElementById('interest-value').textContent = brl.format(interestTotal);
+        document.getElementById('growth-value').textContent = final.invested
+          ? `${pct.format((interestTotal / final.invested) * 100)}%`
+          : '0,0%';
+        renderTable();
+        drawChart();
+      }
+
+      function renderTable() {
+        rows.innerHTML = simulation.map((item) => `
+          <tr>
+            <td>${item.month === 0 ? 'Início' : `${item.month}º mês`}</td>
+            <td>${brl.format(item.invested)}</td>
+            <td class="${item.interest > 0 ? 'gain' : ''}">${brl.format(item.interest)}</td>
+            <td><strong>${brl.format(item.balance)}</strong></td>
+          </tr>
+        `).join('');
+      }
+
+      function getChartGeometry() {
+        const width = chartWrap.clientWidth;
+        const height = chartWrap.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { width, height, left: 54, right: 18, top: 18, bottom: 38 };
+      }
+
+      function drawChart() {
+        if (!simulation.length) return;
+        const { width, height, left, right, top, bottom } = getChartGeometry();
+        const plotWidth = width - left - right;
+        const plotHeight = height - top - bottom;
+        const maxValue = Math.max(...simulation.map(item => item.balance), 1);
+        const chartMax = maxValue * 1.08;
+        const x = index => left + (index / (simulation.length - 1 || 1)) * plotWidth;
+        const y = value => top + plotHeight - (value / chartMax) * plotHeight;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.font = '11px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+
+        for (let i = 0; i <= 4; i += 1) {
+          const value = chartMax * (i / 4);
+          const lineY = y(value);
+          ctx.strokeStyle = '#edf1f6';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(left, lineY);
+          ctx.lineTo(width - right, lineY);
+          ctx.stroke();
+          ctx.fillStyle = '#8b96a8';
+          ctx.fillText(formatCompact(value), left - 9, lineY);
+        }
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const labelEvery = Math.max(1, Math.ceil((simulation.length - 1) / 5));
+        simulation.forEach((item, index) => {
+          if (index === 0 || index === simulation.length - 1 || index % labelEvery === 0) {
+            ctx.fillStyle = '#8b96a8';
+            ctx.fillText(item.month === 0 ? 'Início' : `Mês ${item.month}`, x(index), height - bottom + 14);
+          }
+        });
+
+        drawSeries(item => item.invested, '#07855b', false, x, y);
+        drawSeries(item => item.balance, '#2864dc', true, x, y);
+      }
+
+      function drawSeries(getValue, color, fill, x, y) {
+        const points = simulation.map((item, index) => ({ x: x(index), y: y(getValue(item)) }));
+        if (fill) {
+          const gradient = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight);
+          gradient.addColorStop(0, 'rgba(40, 100, 220, .20)');
+          gradient.addColorStop(1, 'rgba(40, 100, 220, .015)');
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, canvas.clientHeight - 38);
+          points.forEach(point => ctx.lineTo(point.x, point.y));
+          ctx.lineTo(points[points.length - 1].x, canvas.clientHeight - 38);
+          ctx.closePath();
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          if (index === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = fill ? 3 : 2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      function showTooltip(event) {
+        if (!simulation.length) return;
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left - 54) / (rect.width - 72)));
+        const index = Math.round(ratio * (simulation.length - 1));
+        const item = simulation[index];
+        const pointX = 54 + (index / (simulation.length - 1 || 1)) * (rect.width - 72);
+        const maxValue = Math.max(...simulation.map(entry => entry.balance), 1) * 1.08;
+        const pointY = 18 + (rect.height - 56) - (item.balance / maxValue) * (rect.height - 56);
+        tooltip.innerHTML = `<strong>${item.month === 0 ? 'Início' : `Mês ${item.month}`}</strong><span>Patrimônio: ${brl.format(item.balance)}</span><span>Investido: ${brl.format(item.invested)}</span>`;
+        tooltip.style.left = `${pointX}px`;
+        tooltip.style.top = `${pointY}px`;
+        tooltip.classList.add('visible');
+      }
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        calculate();
+      });
+
+      ratePeriod.addEventListener('change', () => {
+        updateRateHint();
+        calculate();
+      });
+
+      document.getElementById('reset').addEventListener('click', () => {
+        initialInput.value = 10000;
+        monthlyInput.value = 1000;
+        rateInput.value = 0.8;
+        ratePeriod.value = 'monthly';
+        monthsInput.value = 60;
+        updateRateHint();
+        calculate();
+      });
+
+      canvas.addEventListener('mousemove', showTooltip);
+      canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+      window.addEventListener('resize', drawChart);
+      updateRateHint();
+      calculate();
+    })();
+  </script>
+</body>
+</html>
