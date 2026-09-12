@@ -19,7 +19,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 
 Cada experimento pode ser encontrado em seu próprio arquivo e baixado e executado diretamente no navegador.
 
-## 🛠️ Tecnologias
+## Tecnologias
 
 * HTML5
 * CSS3
@@ -27,7 +27,7 @@ Cada experimento pode ser encontrado em seu próprio arquivo e baixado e executa
 
 Sem frameworks ou dependências complexas.
 
-## 📜 Licença
+## Licença
 
 Este projeto está disponível sob a **MIT License**.
 
@@ -38,4 +38,4 @@ Consulte o arquivo [`LICENSE`](LICENSE) para mais informações.
 Gazstao 2026
 **Experimentar. Aprender. Criar.**
 
-💻 [Aztech Alta Tecnologia](https://aztechtecnologia.com.br)
+[Aztech Alta Tecnologia](https://aztechtecnologia.com.br)
