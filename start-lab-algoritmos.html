@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratório de Algoritmos</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+    --grad1:#7c3aed; --grad2:#2563eb;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%, #1e2a4a 0%, var(--bg) 55%);
+    color:var(--text); min-height:100vh;
+  }
+  header{
+    text-align:center; padding:40px 20px 20px;
+  }
+  header h1{
+    font-size:2.4rem; font-weight:800;
+    background:linear-gradient(90deg,var(--grad1),var(--grad2),#06b6d4);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  header p{color:var(--muted); margin-top:8px; max-width:640px; margin-inline:auto; line-height:1.5;}
+  nav{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    padding:16px 20px 24px; max-width:1000px; margin:0 auto;
+  }
+  nav button{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:10px 18px; border-radius:999px; cursor:pointer; font-size:.95rem;
+    transition:.2s; font-weight:600;
+  }
+  nav button:hover{border-color:var(--accent); transform:translateY(-2px);}
+  nav button.active{
+    background:linear-gradient(90deg,var(--grad1),var(--grad2));
+    border-color:transparent; color:#fff; box-shadow:0 4px 18px rgba(88,101,242,.4);
+  }
+  main{max-width:1000px; margin:0 auto; padding:0 20px 60px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:16px; padding:28px; display:none;
+    animation:fade .35s ease;
+  }
+  .card.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+  .card h2{font-size:1.5rem; margin-bottom:6px;}
+  .card .desc{color:var(--muted); line-height:1.6; margin-bottom:18px; font-size:.95rem;}
+  .stage{
+    background:#0b0f14; border:1px solid var(--border); border-radius:12px;
+    height:340px; position:relative; overflow:hidden; margin-bottom:16px;
+  }
+  .bars{position:absolute; inset:0; display:flex; align-items:flex-end; gap:4px; padding:16px;}
+  .bar{
+    flex:1; border-radius:6px 6px 0 0;
+    background:linear-gradient(180deg,#3b82f6,#1e40af);
+    transition:height .3s, background .3s, transform .3s;
+    position:relative;
+  }
+  .bar.active{background:linear-gradient(180deg,#fbbf24,#d97706); transform:scaleX(1.15); box-shadow:0 0 20px rgba(251,191,36,.5);}
+  .bar.swapping{background:linear-gradient(180deg,#f87171,#dc2626);}
+  .bar.sorted,.bar.pivot{background:linear-gradient(180deg,#4ade80,#16a34a);}
+  .bar.pivot{background:linear-gradient(180deg,#c084fc,#7c3aed);}
+  .bar-label{position:absolute; bottom:-20px; width:100%; text-align:center; font-size:.65rem; color:var(--muted);}
+  canvas{width:100%; height:100%; display:block;}
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;}
+  .controls button{
+    padding:9px 20px; border-radius:8px; border:1px solid var(--border);
+    background:#21262d; color:var(--text); cursor:pointer; font-weight:600; font-size:.9rem;
+    transition:.2s;
+  }
+  .controls button:hover:not(:disabled){border-color:var(--accent);}
+  .controls button:disabled{opacity:.4; cursor:not-allowed;}
+  .controls .play{background:linear-gradient(90deg,#16a34a,#15803d); border:none; color:#fff;}
+  .controls label{color:var(--muted); font-size:.85rem; display:flex; align-items:center; gap:8px;}
+  .controls input[type=range]{accent-color:var(--accent); width:120px;}
+  .controls input[type=number]{
+    background:#0b0f14; border:1px solid var(--border); color:var(--text);
+    padding:7px 10px; border-radius:8px; width:90px;
+  }
+  .status{
+    font-family:'Consolas',monospace; font-size:.9rem; color:var(--ok);
+    min-height:24px; margin-bottom:8px;
+  }
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.8rem; color:var(--muted); margin-top:10px;}
+  .legend span{display:flex; align-items:center; gap:6px;}
+  .dot{width:12px; height:12px; border-radius:3px; display:inline-block;}
+  .stats{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:14px; font-size:.85rem;}
+  .stats div{background:#0b0f14; border:1px solid var(--border); padding:8px 14px; border-radius:8px;}
+  .stats b{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚗️ Laboratório de Algoritmos</h1>
+  <p>Visualize, passo a passo, como os algoritmos clássicos funcionam. Escolha um algoritmo abaixo, ajuste a velocidade e execute a animação.</p>
+</header>
+
+<nav id="tabs">
+  <button data-tab="bubble" class="active">🫧 Bubble Sort</button>
+  <button data-tab="fib">🌀 Fibonacci</button>
+  <button data-tab="bin">🔍 Busca Binária</button>
+  <button data-tab="dijk">🗺️ Dijkstra</button>
+  <button data-tab="quick">⚡ QuickSort</button>
+</nav>
+
+<main>
+
+  <!-- BUBBLE SORT -->
+  <section class="card active" id="bubble">
+    <h2>Bubble Sort</h2>
+    <p class="desc">"Ordenação por bolhas": compara vizinhos e troca os que estão fora de ordem. A cada passada, o maior elemento "sobe" até o final. Complexidade: <b>O(n²)</b>.</p>
+    <div class="stage"><div class="bars" id="bubbleBars"></div></div>
+    <div class="stats">
+      <div>Comparações: <b id="bComp">0</b></div>
+      <div>Trocas: <b id="bSwap">0</b></div>
+    </div>
+    <div class="controls">
+      <button class="play" id="bPlay">▶ Iniciar</button>
+      <button id="bReset">↺ Reiniciar</button>
+      <label>Velocidade <input type="range" id="bSpeed" min="1" max="100" value="55"></label>
+    </div>
+    <div class="status" id="bStatus">Pronto para executar.</div>
+    <div class="legend">
+      <span><i class="dot" style="background:#3b82f6"></i> Não ordenado</span>
+      <span><i class="dot" style="background:#fbbf24"></i> Comparando</span>
+      <span><i class="dot" style="background:#f87171"></i> Trocando</span>
+      <span><i class="dot" style="background:#4ade80"></i> Ordenado</span>
+    </div>
+  </section>
+
+  <!-- FIBONACCI -->
+  <section class="card" id="fib">
+    <h2>Sequência de Fibonacci</h2>
+    <p class="desc">Cada termo é a soma dos dois anteriores: <b>F(n) = F(n−1) + F(n−2)</b>. A razão entre termos consecutivos se aproxima da constante áurea φ ≈ 1,618…</p>
+    <div class="stage"><canvas id="fibCanvas"></canvas></div>
+    <div class="controls">
+      <button class="play" id="fPlay">▶ Gerar</button>
+      <button id="fReset">↺ Reiniciar</button>
+      <label>Termos: <input type="number" id="fCount" value="12" min="3" max="20"></label>
+      <label>Velocidade <input type="range" id="fSpeed" min="1" max="100" value="55"></label>
+    </div>
+    <div class="status" id="fStatus">Pronto para gerar a sequência.</div>
+  </section>
+
+  <!-- BINÁRIA -->
+  <section class="card" id="bin">
+    <h2>Busca Binária</h2>
+    <p class="desc">Em um array ordenado, divide o intervalo pela metade a cada passo. Elimina metade dos elementos por iteração. Complexidade: <b>O(log n)</b>.</p>
+    <div class="stage" id="binStage"></div>
+    <div class="controls">
+      <button class="play" id="bnPlay">▶ Buscar</button>
+      <button id="bnReset">↺ Novo array</button>
+      <label>Alvo: <input type="number" id="bnTarget" value="42"></label>
+      <label>Velocidade <input type="range" id="bnSpeed" min="1" max="100" value="45"></label>
+    </div>
+    <div class="status" id="bnStatus">Pronto para buscar.</div>
+    <div class="legend">
+      <span><i class="dot" style="background:#334155"></i> Eliminada</span>
+      <span><i class="dot" style="background:#fbbf24"></i> Meio (mid)</span>
+      <span><i class="dot" style="background:#4ade80"></i> Encontrado</span>
+    </div>
+  </section>
+
+  <!-- DIJKSTRA -->
+  <section class="card" id="dijk">
+    <h2>Dijkstra</h2>
+    <p class="desc">Encontra o caminho de menor custo entre dois vértices em um grafo com arestas de peso positivo. Seleciona repetidamente o nó de menor distância conhecida. Complexidade: <b>O((V+E) log V)</b>.</p>
+    <div class="stage"><canvas id="dijkCanvas"></canvas></div>
+    <div class="stats">
+      <div>Distância do alvo: <b id="dDist">—</b></div>
+      <div>Camino: <b id="dPath">—</b></div>
+    </div>
+    <div class="controls">
+      <button class="play" id="dPlay">▶ Executar</button>
+      <button id="dReset">↺ Novo grafo</button>
+      <label>Velocidade <input type="range" id="dSpeed" min="1" max="100" value="45"></label>
+    </div>
+    <div class="status" id="dStatus">Pronto para executar.</div>
+    <div class="legend">
+      <span><i class="dot" style="background:#64748b"></i> Pendente</span>
+      <span><i class="dot" style="background:#fbbf24"></i> Visitando</span>
+      <span><i class="dot" style="background:#3b82f6"></i> Visitado</span>
+      <span><i class="dot" style="background:#4ade80"></i> Caminho ótimo</span>
+    </div>
+  </section>
+
+  <!-- QUICKSORT -->
+  <section class="card" id="quick">
+    <h2>QuickSort</h2>
+    <p class="desc">Escolhe um <b>pivô</b>, organiza elementos menores à esquerda e maiores à direita (particionamento), e resolve recursivamente cada lado. Complexidade média: <b>O(n log n)</b>.</p>
+    <div class="stage"><div class="bars" id="qBars"></div></div>
+    <div class="stats">
+      <div>Partições: <b id="qPart">0</b></div>
+      <div>Trocas: <b id="qSwap">0</b></div>
+    </div>
+    <div class="controls">
+      <button class="play" id="qPlay">▶ Iniciar</button>
+      <button id="qReset">↺ Reiniciar</button>
+      <label>Velocidade <input type="range" id="qSpeed" min="1" max="100" value="55"></label>
+    </div>
+    <div class="status" id="qStatus">Pronto para executar.</div>
+    <div class="legend">
+      <span><i class="dot" style="background:#3b82f6"></i> Não ordenado</span>
+      <span><i class="dot" style="background:#c084fc"></i> Pivô</span>
+      <span><i class="dot" style="background:#4ade80"></i> Ordenado</span>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ============ MOTOR DE ANIMAÇÃO ============ */
+const state = { paused:false, running:false };
+const speed = id => 1010 - (+document.getElementById(id).value * 10); // ms
+const delay = (id) => new Promise(res => {
+  const t = setTimeout(res, speed(id));
+  const iv = setInterval(() => { if (state.paused) { clearTimeout(t); clearInterval(iv); res(); } }, 30);
+  setTimeout(() => clearInterval(iv), speed(id) + 100);
+});
+function setRunning(on){
+  state.running = on; state.paused = false;
+}
+function disable(id, on){
+  const p = document.getElementById(id+'Play'), r = document.getElementById(id+'Reset');
+  p.disabled = on;
+}
+
+/* ============ NAVEGAÇÃO ============ */
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.card').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.tab).classList.add('active');
+  if (b.dataset.tab === 'dijk') drawDijk();
+  if (b.dataset.tab === 'fib')  drawFib([]);
+});
+
+/* ============ UTIL ============ */
+const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=rand(0,i);[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ============ 1) BUBBLE SORT ============ */
+(function(){
+  let data;
+  const el = document.getElementById('bubbleBars');
+  const N = 18;
+  function build(){
+    data = shuffle(Array.from({length:N},()=>rand(5,100)));
+    el.innerHTML='';
+    data.forEach(v=>{
+      const b=document.createElement('div'); b.className='bar';
+      b.style.height=v+'%';
+      b.innerHTML=`<span class="bar-label">${v}</span>`;
+      el.appendChild(b);
+    });
+  }
+  build();
+  document.getElementById('bReset').onclick=()=>{build();
+    document.getElementById('bStatus').textContent='Pronto para executar.';
+    document.getElementById('bComp').textContent='0';
+    document.getElementById('bSwap').textContent='0';};
+  document.getElementById('bPlay').onclick = async ()=>{
+    if(state.running) return;
+    setRunning(true); disable('b',true);
+    const bars=[...el.children];
+    let comp=0, sw=0;
+    const st=document.getElementById('bStatus');
+    for(let i=0;i<N-1;i++){
+      let swapped=false;
+      for(let j=0;j<N-1-i;j++){
+        bars[j].classList.add('active'); bars[j+1].classList.add('active');
+        st.textContent=`Comparando ${data[j]} e ${data[j+1]}...`;
+        await delay('bSpeed');
+        if(data[j]>data[j+1]){
+          bars[j].classList.add('swapping'); bars[j+1].classList.add('swapping');
+          [data[j],data[j+1]]=[data[j+1],data[j]]; swapped=true; sw++;
+          document.getElementById('bSwap').textContent=sw;
+          bars[j].style.height=data[j]+'%'; bars[j+1].style.height=data[j+1]+'%';
+          bars[j].querySelector('.bar-label').textContent=data[j];
+          bars[j+1].querySelector('.bar-label').textContent=data[j+1];
+          await delay('bSpeed');
+        }
+        comp++; document.getElementById('bComp').textContent=comp;
+        bars[j].classList.remove('active','swapping');
+        bars[j+1].classList.remove('active','swapping');
+      }
+      bars[N-1-i].classList.add('sorted');
+      if(!swapped) break; // otimização
+    }
+    bars.forEach(b=>b.classList.add('sorted'));
+    st.textContent='✔ Ordenado com sucesso!';
+    setRunning(false); disable('b',false);
+  };
+})();
+
+/* ============ 2) FIBONACCI ============ */
+(function(){
+  const cv=document.getElementById('fibCanvas'), ctx=cv.getContext('2d');
+  let seq=[];
+  function size(){ cv.width=cv.clientWidth; cv.height=cv.clientHeight; }
+  function drawFib(s, foundIdx=-1){
+    size();
+    const W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H);
+    if(!s.length){
+      ctx.fillStyle='#8b949e'; ctx.font='16px Segoe UI';
+      ctx.fillText('Clique em ▶ Gerar para construir a sequência passo a passo.', 20, 30);
+      return;
+    }
+    const max=Math.log(s[s.length-1]+1);
+    const bw=Math.min(46, (W-40)/s.length - 6);
+    const totalW=s.length*bw;
+    const x0=(W-totalW)/2, base=H-60;
+    s.forEach((v,i)=>{
+      const h=Math.max(6,(Math.log(v+1)/max)*(H-120));
+      const g=ctx.createLinearGradient(0,base-h,0,base);
+      g.addColorStop(0,'#7c3aed'); g.addColorStop(1,'#2563eb');
+      ctx.fillStyle=g;
+      roundRect(ctx,x0+i*bw,base-h,bw-6,h,6); ctx.fill();
+      ctx.fillStyle='#e6edf3'; ctx.font='bold 13px Consolas'; ctx.textAlign='center';
+      ctx.fillText(v, x0+i*bw+(bw-6)/2, base+20);
+      ctx.fillStyle='#8b949e'; ctx.font='11px Consolas';
+      ctx.fillText('F('+i+')', x0+i*bw+(bw-6)/2, base+38);
+      if(i>0 && i<s.length-1){
+        const phi=(s[i+1]/s[i]).toFixed(4);
+        if(i===foundIdx){
+          ctx.fillStyle='#3fb950'; ctx.font='bold 12px Segoe UI';
+          ctx.fillText('φ ≈ '+phi, x0+i*bw+(bw-6)/2+(bw)/2, base-h-10);
+        }
+      }
+    });
+    const last=s[s.length-1];
+    ctx.fillStyle='#8b949e'; ctx.font='12px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Razão F(n)/F(n-1) → 1,6180 (constante áurea)', 20, 24);
+  }
+  function roundRect(c,x,y,w,h,r){
+    r=Math.min(r,h/2);
+    c.beginPath();
+    c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.lineTo(x+w,y+h);
+    c.lineTo(x,y+h); c.closePath();
+  }
+  window.drawFib=drawFib;
+  document.getElementById('fReset').onclick=()=>{ seq=[]; drawFib(seq);
+    document.getElementById('fStatus').textContent='Pronto para gerar a sequência.';};
+  document.getElementById('fPlay').onclick = async ()=>{
+    if(state.running) return;
+    setRunning(true); disable('f',true);
+    seq=[1,1];
+    const st=document.getElementById('fStatus');
+    const n=Math.min(20,Math.max(3,+document.getElementById('fCount').value));
+    drawFib(seq);
+    await delay('fSpeed');
+    while(seq.length<n){
+      const a=seq[seq.length-2], b=seq[seq.length-1];
+      seq.push(a+b);
+      st.textContent=`F(${seq.length-2}) = ${a} + ${b} = ${seq[seq.length-1]}`;
+      drawFib(seq);
+      await delay('fSpeed');
+    }
+    const r=(seq[n-1]/seq[n-2]);
+    st.textContent=`✔ Sequência completa! Razão final: ${r.toFixed(5)}  →  φ ≈ 1,61803`;
+    drawFib(seq, n-1);
+    setRunning(false); disable('f',false);
+  };
+  drawFib(seq);
+})();
+
+/* ============ 3) BUSCA BINÁRIA ============ */
+(function(){
+  let arr;
+  const stage=document.getElementById('binStage');
+  function build(){
+    arr=shuffle(Array.from({length:15},()=>rand(1,99))).sort((a,b)=>a-b);
+    render([-1,-1,-1], null);
+  }
+  function render(lo,hi,mid,found,elim){
+    stage.innerHTML='<div class="bars" style="padding-bottom:56px">'+
+      arr.map((v,i)=>{
+        let cls='bar', style='background:#334155; opacity:.55;';
+        if(elim && (i<lo || i>hi)) {}
+        else {
+          if(mid===i) style = found===i
+            ? 'background:linear-gradient(180deg,#4ade80,#16a34a); box-shadow:0 0 20px rgba(74,222,128,.6);'
+            : 'background:linear-gradient(180deg,#fbbf24,#d97706);';
+          else style='background:linear-gradient(180deg,#3b82f6,#1e40af);';
+        }
+        let tag='';
+        if(mid===i) tag=`<b style="color:#fbbf24;position:absolute;bottom:-24px;width:100%;text-align:center;left:0;">mid</b>`;
+        if(lo!==-1 && i===lo) tag+=`<b style="color:#58a6ff;position:absolute;bottom:-40px;width:100%;text-align:center;left:0;font-size:.65rem;">L</b>`;
+        if(hi!==-1 && i===hi) tag+=`<b style="color:#58a6ff;position:absolute;bottom:-40px;width:100%;text-align:center;left:0;font-size:.65rem;">R</b>`;
+        return `<div class="bar" style="height:${30+v*0.65}%;${style}"><span class="bar-label">${v}</span>${tag}</div>`;
+      })+'</div>';
+  }
+  build();
+  document.getElementById('bnReset').onclick=()=>{build();
+    document.getElementById('bnStatus').textContent='Pronto para buscar.';};
+  document.getElementById('bnPlay').onclick = async ()=>{
+    if(state.running) return;
+    setRunning(true); disable('bn',true);
+    const target=+document.getElementById('bnTarget').value;
+    const st=document.getElementById('bnStatus');
+    let lo=0, hi=arr.length-1, steps=0;
+    render(lo,hi,-1);
+    while(lo<=hi){
+      const mid=(lo+hi)>>1;
+      steps++;
+      st.textContent=`Passo ${steps}: mid = ${mid} → valor ${arr[mid]}  (alvo: ${target})`;
+      render(lo,hi,mid);
+      await delay('bnSpeed');
+      if(arr[mid]===target){
+        render(lo,hi,mid,true);
+        st.textContent=`✔ Encontrado! ${target} na posição ${mid} em ${steps} passo(s) (log₂${arr.length} ≈ ${Math.log2(arr.length).toFixed(1)})`;
+        setRunning(false); disable('bn',false); return;
+      } else if(arr[mid]<target){
+        st.textContent=`${arr[mid]} < ${target} → descartando metade esquerda`;
+        render(lo,mid-1,-1); lo=mid+1;
+      } else {
+        st.textContent=`${arr[mid]} > ${target} → descartando metade direita`;
+        render(mid+1,hi,-1); hi=mid-1;
+      }
+      await delay('bnSpeed');
+    }
+    st.textContent=`✖ ${target} não está no array (eliminado em ${steps} passos).`;
+    setRunning(false); disable('bn',false);
+  };
+})();
+
+/* ============ 4) DIJKSTRA ============ */
+(function(){
+  const cv=document.getElementById('dijkCanvas'), ctx=cv.getContext('2d');
+  let nodes=[], edges=[], src=0, tgt;
+  const stateColors={ pending:'#64748b', visiting:'#fbbf24', visited:'#3b82f6', path:'#4ade80' };
+
+  function newGraph(){
+    nodes=[]; edges=[];
+    // posições pseudo-aleatórias com espaçamento
+    const pts=[];
+    let tries=0;
+    while(pts.length<8 && tries<500){
+      tries++;
+      const x=80+Math.random()*(cv.clientWidth||700-160);
+      const y=60+Math.random()*(cv.clientHeight||340-120);
+      if(pts.every(p=>Math.hypot(p.x-x,p.y-y)>95)) pts.push({x,y});
+    }
+    pts.forEach((p,i)=>nodes.push({id:i,x:p.x,y:p.y,dist:Infinity,prev:null,status:'pending'}));
+    // vizinhos: cada nó liga a 2-3 mais próximos
+    nodes.forEach((n,i)=>{
+      const others=nodes.map((m,j)=>({j,d:Math.hypot(n.x-m.x,n.y-m.y)}))
+        .filter(o=>o.j!==i).sort((a,b)=>a.d-b.d).slice(0,3);
+      others.forEach(o=>{
+        if(!edges.find(e=>(e.a===i&&e.b===o.j)||(e.a===o.j&&e.b===i)))
+          edges.push({a:i,b:o.j,w:rand(1,9)});
+      });
+    });
+    // garante conectado (liga em cadeia quem estiver isolado)
+    for(let i=1;i<nodes.length;i++){
+      if(!edges.find(e=>e.a===i||e.b===i)) edges.push({a:i-1,b:i,w:rand(1,9)});
+    }
+    src=0; tgt=nodes.length-1;
+    drawDijk();
+  }
+  function adj(i){
+    return edges.filter(e=>e.a===i||e.b===i).map(e=>({to:e.a===i?e.b:e.a,w:e.w}));
+  }
+  function drawDijk(){
+    const W=cv.width=cv.clientWidth, H=cv.height=cv.clientHeight;
+    ctx.clearRect(0,0,W,H);
+    ctx.font='12px Segoe UI';
+    edges.forEach(e=>{
+      const a=nodes[e.a], b=nodes[e.b];
+      const onPath = nodes[e.a].status==='path' && nodes[e.b].status==='path'
+                     && (nodes[e.a].prev===e.b||nodes[e.b].prev===e.a);
+      const touching = (nodes[e.a].status!=='pending'||nodes[e.b].status!=='pending');
+      ctx.strokeStyle= onPath ? '#4ade80' : touching ? 'rgba(59,130,246,.55)' : 'rgba(100,116,139,.4)';
+      ctx.lineWidth= onPath?3:1.5;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      ctx.fillStyle= onPath ? '#4ade80' : '#8b949e';
+      ctx.textAlign='center';
+      ctx.fillText(e.w, mx, my-6);
+    });
+    nodes.forEach(n=>{
+      ctx.beginPath(); ctx.arc(n.x,n.y,18,0,7);
+      ctx.fillStyle=stateColors[n.status]||'#64748b'; ctx.fill();
+      ctx.lineWidth=2; ctx.strokeStyle='#0b0f14'; ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='bold 13px Segoe UI'; ctx.textAlign='center';
+      ctx.fillText(n.id+1, n.x, n.y+5);
+      if(n.dist<Infinity){
+        ctx.fillStyle='#e6edf3'; ctx.font='11px Consolas';
+        ctx.fillText('d='+n.dist, n.x, n.y+34);
+      }
+      // marca origem/destino
+      ctx.fillStyle='#fbbf24'; ctx.font='bold 11px Segoe UI';
+      if(n.id===src) ctx.fillText('INÍCIO', n.x, n.y-26);
+      if(n.id===tgt){ ctx.fillStyle='#f85149'; ctx.fillText('ALVO', n.x, n.y-26); }
+    });
+  }
+  window.drawDijk=drawDijk;
+  document.getElementById('dReset').onclick=()=>{ newGraph();
+    document.getElementById('dStatus').textContent='Novo grafo gerado.';
+    document.getElementById('dDist').textContent='—';
+    document.getElementById('dPath').textContent='—';};
+  document.getElementById('dPlay').onclick = async ()=>{
+    if(state.running) return;
+    setRunning(true); disable('d',true);
+    nodes.forEach(n=>{n.dist=Infinity;n.prev=null;n.status='pending';});
+    nodes[src].dist=0;
+    const st=document.getElementById('dStatus');
+    const done=new Set();
+    const pathEdges=new Set();
+    while(true){
+      // menor dist não visitado
+      let u=null, best=Infinity;
+      nodes.forEach(n=>{ if(!done.has(n.id)&&n.dist<best){best=n.dist;u=n;} });
+      if(u===null || u.id===tgt) break;
+      u.status='visiting'; drawDijk();
+      st.textContent=`Visitando nó ${u.id+1} (distância ${u.dist})...`;
+      await delay('dSpeed');
+      for(const {to,w} of adj(u.id)){
+        const v=nodes[to];
+        if(u.dist+w < v.dist){
+          v.dist=u.dist+w; v.prev=u.id;
+          drawDijk();
+          st.textContent=`Melhorou nó ${v.id+1}: ${u.dist} + ${w} = ${v.dist}`;
+          await delay('dSpeed');
+        }
+      }
+      done.add(u.id); u.status='visited'; drawDijk();
+      await delay('dSpeed');
+    }
+    // reconstrói caminho
+    if(nodes[tgt].dist<Infinity){
+      const path=[]; let c=tgt;
+      while(c!==null){ path.unshift(c); c=nodes[c].prev; }
+      path.forEach(id=>nodes[id].status='path');
+      drawDijk();
+      document.getElementById('dDist').textContent=nodes[tgt].dist;
+      document.getElementById('dPath').textContent=path.map(i=>i+1).join(' → ');
+      st.textContent=`✔ Caminho ótimo encontrado: custo total ${nodes[tgt].dist}`;
+    } else {
+      st.textContent='✖ Destino inacessível.';
+    }
+    setRunning(false); disable('d',false);
+  };
+  newGraph();
+})();
+
+/* ============ 5) QUICKSORT ============ */
+(function(){
+  let data;
+  const el=document.getElementById('qBars');
+  const N=18;
+  function build(){
+    data=shuffle(Array.from({length:N},()=>rand(5,100)));
+    el.innerHTML='';
+    data.forEach(v=>{
+      const b=document.createElement('div'); b.className='bar'; b.style.height=v+'%';
+      b.innerHTML=`<span class="bar-label">${v}</span>`;
+      el.appendChild(b);
+    });
+  }
+  build();
+  function paint(activeIdx,pivotIdx,sortedSet){
+    [...el.children].forEach((b,i)=>{
+      b.classList.remove('active','pivot','sorted');
+      if(sortedSet.has(i)) b.classList.add('sorted');
+      else if(i===pivotIdx) b.classList.add('pivot');
+      else if(activeIdx.includes(i)) b.classList.add('active');
+    });
+  }
+  document.getElementById('qReset').onclick=()=>{build();
+    document.getElementById('qStatus').textContent='Pronto para executar.';
+    document.getElementById('qPart').textContent='0';
+    document.getElementById('qSwap').textContent='0';};
+  document.getElementById('qPlay').onclick = async ()=>{
+    if(state.running) return;
+    setRunning(true); disable('q',true);
+    const st=document.getElementById('qStatus');
+    const sorted=new Set();
+    let parts=0, swaps=0;
+    const doSwap=(i,j)=>{
+      [data[i],data[j]]=[data[j],data[i]]; swaps++;
+      document.getElementById('qSwap').textContent=swaps;
+      const bars=[...el.children];
+      bars[i].style.height=data[i]+'%'; bars[i].querySelector('.bar-label').textContent=data[i];
+      bars[j].style.height=data[j]+'%'; bars[j].querySelector('.bar-label').textContent=data[j];
+    };
+    async function qs(lo,hi){
+      if(lo>hi) return;
+      if(lo===hi){ sorted.add(lo); paint([], -1, sorted); return; }
+      parts++; document.getElementById('qPart').textContent=parts;
+      const pivot=data[hi];
+      st.textContent=`Partição [${lo+1}..${hi+1}] com pivô = ${pivot}`;
+      let i=lo-1;
+      for(let j=lo;j<hi;j++){
+        paint([j,hi], hi, sorted);
+        await delay('qSpeed');
+        if(data[j]<pivot){
+          i++;
+          if(i!==j) doSwap(i,j);
+          paint([i,hi], hi, sorted);
+          await delay('qSpeed');
+        }
+      }
+      doSwap(i+1,hi);
+      sorted.add(i+1);
+      st.textContent=`Pivô ${pivot} fixado na posição ${i+2}`;
+      paint([], -1, sorted);
+      await delay('qSpeed');
+      await qs(lo,i); await qs(i+2,hi);
+    }
+    await qs(0,N-1);
+    sorted.forEach(i=>{});
+    [...el.children].forEach(b=>b.classList.add('sorted'));
+    st.textContent='✔ Ordenado com sucesso!';
+    setRunning(false); disable('q',false);
+  };
+})();
+
+/* redimensiona canvases */
+window.addEventListener('resize', ()=>{ drawDijk(); drawFib([]); });
+</script>
+</body>
+</html>
