@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gratidão Viva</title>
+  <style>
+:root {
+  --background: 36 45% 95%;
+  --foreground: 15 50% 20%;
+  
+  --card: 36 50% 98%;
+  --card-foreground: 15 50% 20%;
+  --card-border: 30 30% 85%;
+  
+  --popover: 36 50% 98%;
+  --popover-foreground: 15 50% 20%;
+  
+  --primary: 20 60% 45%;
+  --primary-foreground: 36 45% 95%;
+  
+  --secondary: 110 20% 85%;
+  --secondary-foreground: 110 40% 25%;
+  
+  --muted: 30 20% 88%;
+  --muted-foreground: 25 30% 40%;
+  
+  --accent: 40 80% 60%;
+  --accent-foreground: 15 50% 20%;
+  
+  --destructive: 0 60% 50%;
+  --destructive-foreground: 36 45% 95%;
+  
+  --border: 30 20% 85%;
+  --input: 30 20% 85%;
+  --ring: 20 60% 45%;
+  
+  --radius: 1.5rem;
+  
+  --font-sans: 'Segoe UI', 'Trebuchet MS', Arial, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+}
+
+.dark {
+  --background: 230 40% 10%;
+  --foreground: 40 30% 90%;
+  
+  --card: 230 35% 14%;
+  --card-foreground: 40 30% 90%;
+  --card-border: 230 30% 25%;
+  
+  --popover: 230 35% 14%;
+  --popover-foreground: 40 30% 90%;
+  
+  --primary: 40 80% 60%;
+  --primary-foreground: 230 40% 10%;
+  
+  --secondary: 200 30% 20%;
+  --secondary-foreground: 200 40% 85%;
+  
+  --muted: 230 30% 20%;
+  --muted-foreground: 230 20% 65%;
+  
+  --accent: 20 60% 45%; 
+  --accent-foreground: 40 30% 90%;
+  
+  --destructive: 0 60% 50%;
+  --destructive-foreground: 40 30% 90%;
+  
+  --border: 230 30% 25%;
+  --input: 230 30% 25%;
+  --ring: 40 80% 60%;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { border-color: hsl(var(--border)); }
+
+body {
+  font-family: var(--font-sans);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: background-color 0.7s ease, color 0.7s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-serif); font-weight: normal; }
+
+::selection { background-color: hsla(var(--primary) / 0.2); }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: hsla(var(--muted-foreground) / 0.3); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background-color: hsla(var(--muted-foreground) / 0.5); }
+
+/* Layout */
+.app { min-height: 100dvh; width: 100%; display: flex; flex-direction: column; position: relative; overflow-x: hidden; }
+
+.noise-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 50; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+.dark .noise-overlay { opacity: 0.05; }
+
+.ambient-lights { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.light { position: absolute; border-radius: 50%; filter: blur(120px); transition: background-color 1s; mix-blend-mode: multiply; }
+.dark .light { mix-blend-mode: lighten; }
+.light-primary { top: -20%; left: -10%; width: 60%; height: 60%; background-color: hsla(var(--primary) / 0.1); }
+.dark .light-primary { background-color: hsla(var(--primary) / 0.05); }
+.light-accent { bottom: -10%; right: -10%; width: 70%; height: 70%; background-color: hsla(var(--accent) / 0.1); filter: blur(140px); }
+.dark .light-accent { background-color: hsla(var(--accent) / 0.05); }
+
+/* Header */
+.header {
+  width: 100%; padding: 2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 10; background-color: hsla(var(--background) / 0.4);
+  backdrop-filter: blur(12px); border-bottom: 1px solid hsla(var(--foreground) / 0.05);
+  transition: background-color 0.5s, border-color 0.5s;
+}
+@media (min-width: 768px) { .header { padding: 2rem 3rem; } }
+
+.logo { display: flex; align-items: center; gap: 0.75rem; color: hsl(var(--foreground)); animation: fade-right 1s cubic-bezier(0.21, 0.47, 0.32, 0.98); }
+.logo svg { color: hsl(var(--primary)); }
+.logo h1 { font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.2em; font-weight: 500; text-transform: uppercase; color: hsla(var(--primary) / 0.9); }
+
+.theme-toggle {
+  background: none; border: none; padding: 0.75rem; border-radius: 50%; cursor: pointer;
+  color: hsla(var(--foreground) / 0.5); transition: background-color 0.2s, color 0.2s;
+  animation: fade-left 1s cubic-bezier(0.21, 0.47, 0.32, 0.98);
+}
+.theme-toggle:hover { background-color: hsla(var(--foreground) / 0.05); color: hsl(var(--foreground)); }
+
+/* Animations */
+@keyframes fade-right { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes fade-left { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+.fade-in {
+  opacity: 0; transform: translateY(40px);
+  transition: opacity 1.2s cubic-bezier(0.21, 0.47, 0.32, 0.98), transform 1.2s cubic-bezier(0.21, 0.47, 0.32, 0.98);
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+.delay-200 { transition-delay: 0.2s; }
+
+/* Main Section */
+.main { flex: 1; width: 100%; max-width: 56rem; margin: 4rem auto 0; padding: 0 1.5rem 8rem; z-index: 10; display: flex; flex-direction: column; }
+@media (min-width: 768px) { .main { margin-top: 6rem; } }
+
+.section-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3rem; min-height: 70vh; justify-content: center; }
+.hero-title { font-size: 2.25rem; line-height: 1.1; max-width: 56rem; letter-spacing: -0.025em; margin: 0 auto; }
+.hero-title span { color: hsl(var(--primary)); font-style: italic; }
+@media (min-width: 768px) { .hero-title { font-size: 3.75rem; } }
+@media (min-width: 1024px) { .hero-title { font-size: 4.5rem; } }
+
+.hero-text { font-size: 1.125rem; color: hsla(var(--foreground) / 0.7); line-height: 1.625; font-weight: 300; max-width: 42rem; margin: 0 auto; }
+@media (min-width: 768px) { .hero-text { font-size: 1.5rem; } }
+
+/* Digital hourglass */
+.digital-hourglass {
+  --sand-progress: 0;
+  width: min(100%, 34rem);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid hsla(var(--primary) / 0.18);
+  border-radius: calc(var(--radius) * 1.2);
+  background: linear-gradient(135deg, hsla(var(--card) / 0.72), hsla(var(--card) / 0.38));
+  box-shadow: 0 1.5rem 4rem hsla(var(--foreground) / 0.06);
+  backdrop-filter: blur(14px);
+  text-align: left;
+}
+.hourglass-figure { width: 5rem; display: grid; place-items: center; }
+.hourglass-frame { position: relative; width: 3.75rem; height: 5.5rem; filter: drop-shadow(0 0.75rem 1.25rem hsla(var(--primary) / 0.13)); }
+.hourglass-frame::before,
+.hourglass-frame::after {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  width: 2.85rem;
+  height: 2.45rem;
+  border-left: 2px solid hsla(var(--foreground) / 0.55);
+  border-right: 2px solid hsla(var(--foreground) / 0.55);
+  z-index: 2;
+}
+.hourglass-frame::before { top: 0.35rem; clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%); }
+.hourglass-frame::after { bottom: 0.35rem; clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); }
+.hourglass-cap {
+  position: absolute;
+  left: 0;
+  width: 3.75rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  opacity: 0.72;
+  z-index: 4;
+}
+.hourglass-cap-top { top: 0; }
+.hourglass-cap-bottom { bottom: 0; }
+.sand {
+  position: absolute;
+  left: 0.72rem;
+  width: 2.3rem;
+  background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--primary)));
+  z-index: 1;
+  transition: height 0.9s linear;
+}
+.sand-top {
+  top: 0.7rem;
+  height: calc(1.75rem * (1 - var(--sand-progress)));
+  clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%);
+}
+.sand-bottom {
+  bottom: 0.7rem;
+  height: calc(1.75rem * var(--sand-progress));
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+}
+.sand-stream {
+  position: absolute;
+  top: 2.65rem;
+  left: 1.82rem;
+  width: 2px;
+  height: 0;
+  background: hsl(var(--accent));
+  opacity: 0;
+  z-index: 3;
+}
+.digital-hourglass.running .sand-stream { height: 0.65rem; opacity: 0.85; animation: sand-shimmer 0.7s linear infinite; }
+.digital-hourglass.complete .hourglass-frame { animation: hourglass-finish 0.8s ease; }
+.hourglass-eyebrow { color: hsl(var(--primary)); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; }
+.hourglass-time { display: block; margin: 0.2rem 0; font-family: var(--font-serif); font-size: clamp(2.2rem, 7vw, 3.6rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.hourglass-message { color: hsla(var(--foreground) / 0.62); font-size: 0.9rem; line-height: 1.5; }
+.hourglass-controls { display: flex; gap: 0.6rem; margin-top: 1rem; }
+.hourglass-btn {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid hsla(var(--foreground) / 0.12);
+  border-radius: 999px;
+  background: transparent;
+  color: hsl(var(--foreground));
+  font: 500 0.78rem var(--font-sans);
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+}
+.hourglass-btn:hover { transform: translateY(-1px); background: hsla(var(--foreground) / 0.05); }
+.hourglass-btn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.hourglass-btn-primary { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.hourglass-btn-primary:hover { background: hsl(var(--primary)); filter: brightness(1.06); }
+@keyframes sand-shimmer { 50% { opacity: 0.35; } }
+@keyframes hourglass-finish { 50% { transform: rotate(8deg) scale(1.04); } }
+@media (max-width: 560px) {
+  .digital-hourglass { grid-template-columns: 1fr; justify-items: center; gap: 1rem; padding: 1.4rem; text-align: center; }
+  .hourglass-controls { justify-content: center; flex-wrap: wrap; }
+}
+
+.divider { width: 1px; height: 8rem; background: linear-gradient(to bottom, transparent, hsla(var(--primary) / 0.2), transparent); margin: 0 auto; }
+@media (min-width: 768px) { .divider { height: 12rem; } }
+
+.section-standard { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2.5rem; padding: 6rem 0; }
+.section-title { font-size: 1.875rem; line-height: 1.25; margin: 0 auto; }
+@media (min-width: 768px) { .section-title { font-size: 3rem; } }
+.section-text { font-size: 1.125rem; color: hsla(var(--foreground) / 0.7); line-height: 1.625; font-weight: 300; max-width: 42rem; margin: 0 auto; }
+@media (min-width: 768px) { .section-text { font-size: 1.25rem; } }
+
+/* Release Ritual */
+.release-ritual { width: 100%; position: relative; height: 250px; display: flex; align-items: center; justify-content: center; }
+.release-form { width: 100%; display: flex; flex-direction: column; gap: 2rem; transition: all 1.2s; }
+.release-form.hidden { opacity: 0; transform: scale(0.95); filter: blur(12px); pointer-events: none; position: absolute; }
+
+.release-input {
+  width: 100%; min-height: 100px; background: transparent; border: none; border-bottom: 1px solid hsla(var(--foreground) / 0.2);
+  outline: none; resize: none; font-size: 1.5rem; font-family: var(--font-serif); text-align: center; color: hsl(var(--foreground));
+  padding: 1rem; line-height: 1.625; transition: border-color 0.3s;
+}
+.release-input::placeholder { color: hsla(var(--foreground) / 0.2); }
+.release-input:focus { border-bottom-color: hsla(var(--foreground) / 0.5); }
+@media (min-width: 768px) { .release-input { font-size: 1.875rem; } }
+
+.release-btn {
+  margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 2rem; border-radius: 9999px;
+  background-color: hsla(var(--foreground) / 0.05); color: hsla(var(--foreground) / 0.8); border: 1px solid transparent;
+  cursor: pointer; transition: all 0.3s; font-family: var(--font-sans); font-size: 1rem; letter-spacing: 0.025em;
+}
+.release-btn:hover:not(:disabled) { background-color: hsla(var(--foreground) / 0.1); border-color: hsla(var(--foreground) / 0.1); }
+.release-btn:disabled { opacity: 0; pointer-events: none; }
+.release-btn svg { transition: transform 0.5s; }
+.release-btn:hover:not(:disabled) svg { transform: translateX(8px); }
+
+.release-animation {
+  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+  color: hsla(var(--foreground) / 0.5); font-family: var(--font-serif); font-size: 1.5rem; text-align: center;
+  opacity: 0; pointer-events: none;
+}
+@media (min-width: 768px) { .release-animation { font-size: 1.875rem; } }
+.release-animation.active { animation: release-fly 5s ease-out forwards; }
+@keyframes release-fly {
+  0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+  20% { opacity: 1; transform: scale(1) translateY(-20px); }
+  80% { opacity: 1; transform: scale(1.05) translateY(-40px); }
+  100% { opacity: 0; transform: scale(1.1) translateY(-80px); }
+}
+.release-animation svg { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; color: hsla(var(--foreground) / 0.3); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* Breathe Circle */
+.breathe-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 0; min-height: 400px; }
+.breathe-circle-wrapper { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; width: 320px; height: 320px; }
+
+.breathe-ring-1, .breathe-ring-2 { position: absolute; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); transition-property: width, height, opacity; }
+.breathe-ring-1 { background-color: hsla(var(--primary) / 0.05); box-shadow: 0 25px 50px -12px hsla(var(--primary) / 0.1); width: 140px; height: 140px; opacity: 0.6; }
+.breathe-ring-2 { background-color: hsla(var(--primary) / 0.1); backdrop-filter: blur(4px); width: 100px; height: 100px; }
+
+/* Phases */
+.phase-idle .breathe-ring-1 { transition-duration: 4s; transition-timing-function: ease-in-out; }
+.phase-idle .breathe-ring-2 { transition-duration: 4s; transition-timing-function: ease-in-out; transition-delay: 0.1s; }
+
+.phase-in .breathe-ring-1 { width: 320px; height: 320px; opacity: 1; transition-duration: 4s; transition-timing-function: ease-in-out; }
+.phase-in .breathe-ring-2 { width: 240px; height: 240px; transition-duration: 4s; transition-timing-function: ease-in-out; transition-delay: 0.1s; }
+
+.phase-hold .breathe-ring-1 { width: 320px; height: 320px; opacity: 1; transition-duration: 3s; transition-timing-function: ease-in-out; }
+.phase-hold .breathe-ring-2 { width: 240px; height: 240px; transition-duration: 3s; transition-timing-function: ease-in-out; transition-delay: 0.1s; }
+
+.phase-out .breathe-ring-1 { width: 140px; height: 140px; opacity: 1; transition-duration: 5s; transition-timing-function: ease-in-out; }
+.phase-out .breathe-ring-2 { width: 100px; height: 100px; transition-duration: 5s; transition-timing-function: ease-in-out; transition-delay: 0.1s; }
+
+.breathe-text { z-index: 10; text-align: center; pointer-events: none; user-select: none; position: absolute; width: 100%; display: flex; justify-content: center; }
+.breathe-text span { position: absolute; transition: all 0.8s; opacity: 0; }
+.breathe-text span.active { opacity: 1; }
+
+.text-idle { color: hsla(var(--foreground) / 0.6); font-family: var(--font-serif); font-size: 1.125rem; letter-spacing: 0.025em; }
+.breathe-circle-wrapper:hover .text-idle { color: hsl(var(--foreground)); }
+
+.text-phase { color: hsl(var(--primary)); font-family: var(--font-serif); font-size: 1.875rem; letter-spacing: 0.025em; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+@media (min-width: 768px) { .text-phase { font-size: 2.25rem; } }
+
+.text-in { transform: translateY(5px); }
+.text-in.active { transform: translateY(0); }
+.text-hold { transform: scale(0.95); }
+.text-hold.active { transform: scale(1); }
+.text-out { transform: translateY(-5px); }
+.text-out.active { transform: translateY(0); }
+
+.breathe-pause { height: 3rem; margin-top: 5rem; display: flex; align-items: center; justify-content: center; }
+.btn-pause {
+  background: none; border: none; color: hsla(var(--foreground) / 0.4); font-size: 0.875rem; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer; transition: color 0.3s; opacity: 0; pointer-events: none; font-family: var(--font-sans);
+}
+.btn-pause.visible { opacity: 1; pointer-events: auto; animation: fade-in-simple 1s forwards; animation-delay: 1s; }
+.btn-pause:hover { color: hsla(var(--foreground) / 0.7); }
+@keyframes fade-in-simple { to { opacity: 1; } }
+
+/* Gratitude Section */
+.gratitude-container { width: 100%; max-width: 48rem; margin: 0 auto; display: flex; flex-direction: column; gap: 6rem; }
+
+.gratitude-form {
+  width: 100%; display: flex; flex-direction: column; gap: 2rem; padding: 2rem; border-radius: 2.5rem;
+  background-color: hsla(var(--card) / 0.4); backdrop-filter: blur(12px);
+  box-shadow: 0 25px 50px -12px hsla(var(--primary) / 0.05); border: 1px solid hsla(var(--primary) / 0.1);
+  position: relative; overflow: hidden;
+}
+@media (min-width: 768px) { .gratitude-form { padding: 3.5rem; } }
+
+.gratitude-form-bg { position: absolute; top: 0; right: 0; width: 16rem; height: 16rem; background-color: hsla(var(--accent) / 0.05); border-radius: 50%; filter: blur(80px); margin-top: -8rem; margin-right: -8rem; pointer-events: none; }
+
+.gratitude-header { text-align: center; margin-bottom: 1rem; position: relative; z-index: 10; }
+.gratitude-header h3 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+@media (min-width: 768px) { .gratitude-header h3 { font-size: 1.875rem; } }
+.gratitude-header p { color: hsla(var(--foreground) / 0.6); font-size: 1.125rem; font-weight: 300; }
+
+.gratitude-input-wrapper { position: relative; z-index: 10; }
+.gratitude-input {
+  width: 100%; min-height: 140px; background-color: hsla(var(--background) / 0.5); border: 1px solid hsla(var(--foreground) / 0.1);
+  border-radius: 1.5rem; padding: 2rem; font-size: 1.25rem; font-family: var(--font-serif); color: hsl(var(--foreground));
+  outline: none; resize: none; transition: all 0.3s; line-height: 1.625;
+}
+@media (min-width: 768px) { .gratitude-input { font-size: 1.5rem; } }
+.gratitude-input::placeholder { color: hsla(var(--foreground) / 0.3); }
+.gratitude-input:focus { border-color: hsla(var(--primary) / 0.4); background-color: hsla(var(--background) / 0.8); box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); }
+
+.gratitude-submit-wrapper { display: flex; justify-content: center; position: relative; z-index: 10; }
+@media (min-width: 768px) { .gratitude-submit-wrapper { justify-content: flex-end; } }
+
+.gratitude-submit {
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; padding: 1rem 2.5rem; border-radius: 9999px;
+  background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border: none; cursor: pointer;
+  transition: all 0.3s; font-family: var(--font-sans); font-weight: 500; letter-spacing: 0.025em;
+  box-shadow: 0 20px 25px -5px hsla(var(--primary) / 0.2), 0 8px 10px -6px hsla(var(--primary) / 0.1);
+}
+@media (min-width: 768px) { .gratitude-submit { width: auto; } }
+.gratitude-submit:hover:not(:disabled) { background-color: hsla(var(--primary) / 0.9); transform: translateY(-4px); box-shadow: 0 20px 25px -5px hsla(var(--primary) / 0.3), 0 8px 10px -6px hsla(var(--primary) / 0.1); }
+.gratitude-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gratitude-gallery { display: none; flex-direction: column; gap: 4rem; animation: fade-in-simple 1s; }
+.gratitude-gallery.has-entries { display: flex; }
+
+.gallery-header { text-align: center; position: relative; }
+.gallery-header h4 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+.gallery-divider { width: 3rem; height: 1px; background-color: hsla(var(--primary) / 0.3); margin: 1.5rem auto 0; }
+
+.gallery-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 768px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; } }
+
+.gratitude-card {
+  background-color: hsla(var(--card) / 0.3); backdrop-filter: blur(4px); padding: 2rem; border-radius: 2rem;
+  border: 1px solid hsla(var(--foreground) / 0.05); display: flex; flex-direction: column; position: relative;
+  transition: all 0.5s; animation: card-enter 0.5s cubic-bezier(0.21, 0.47, 0.32, 0.98) forwards; opacity: 0;
+}
+.gratitude-card:hover { background-color: hsla(var(--card) / 0.6); }
+@keyframes card-enter { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.gratitude-card p { font-size: 1.25rem; color: hsla(var(--foreground) / 0.8); font-family: var(--font-serif); line-height: 1.625; margin-bottom: 2rem; flex: 1; font-style: italic; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 1rem; border-top: 1px solid hsla(var(--foreground) / 0.05); }
+.card-date { font-size: 0.75rem; color: hsla(var(--foreground) / 0.4); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-sans); }
+.card-delete {
+  background: none; border: none; padding: 0.5rem; border-radius: 9999px; color: hsla(var(--foreground) / 0.3); cursor: pointer; transition: all 0.3s; opacity: 0; display: flex; align-items: center; justify-content: center;
+}
+.gratitude-card:hover .card-delete { opacity: 1; }
+.card-delete:hover { color: hsl(var(--destructive)); background-color: hsla(var(--destructive) / 0.1); }
+
+/* Footer */
+.footer { width: 100%; padding: 5rem 0; text-align: center; color: hsla(var(--foreground) / 0.4); font-size: 0.875rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; z-index: 10; }
+@media (min-width: 768px) { .footer { font-size: 1rem; } }
+.footer svg { opacity: 0.3; }
+.footer p { font-family: var(--font-serif); font-style: italic; letter-spacing: 0.025em; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+  </style>
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Theme Toggle
+  const themeToggle = document.getElementById("theme-toggle");
+  const iconSun = document.getElementById("icon-sun");
+  const iconMoon = document.getElementById("icon-moon");
+  
+  const getTheme = () => {
+    if (localStorage.getItem("gratidao_theme")) {
+      return localStorage.getItem("gratidao_theme");
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  };
+  
+  const setTheme = (theme) => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      iconSun.style.display = "block";
+      iconMoon.style.display = "none";
+    } else {
+      document.documentElement.classList.remove("dark");
+      iconSun.style.display = "none";
+      iconMoon.style.display = "block";
+    }
+    localStorage.setItem("gratidao_theme", theme);
+  };
+  
+  setTheme(getTheme());
+  
+  themeToggle.addEventListener("click", () => {
+    setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
+  });
+
+  // Intersection Observer for fade-in animations
+  const fadeElements = document.querySelectorAll(".fade-in");
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: "-50px" });
+  
+  fadeElements.forEach(el => observer.observe(el));
+
+  // Digital Hourglass
+  const hourglass = document.getElementById("digital-hourglass");
+  const hourglassTime = document.getElementById("hourglass-time");
+  const hourglassMessage = document.getElementById("hourglass-message");
+  const hourglassToggle = document.getElementById("hourglass-toggle");
+  const hourglassReset = document.getElementById("hourglass-reset");
+  const hourglassDuration = 60;
+  let hourglassRemaining = hourglassDuration;
+  let hourglassTimer = null;
+
+  const hourglassMessages = [
+    [45, "Perceba a luz, os sons e o espaço ao seu redor."],
+    [30, "O tempo passa. A presença transforma a passagem em vida."],
+    [15, "Escolha uma coisa simples que merece ser notada agora."],
+    [0, "O minuto passou. O que você viveu nele permanece em você."]
+  ];
+
+  const renderHourglass = () => {
+    const minutes = Math.floor(hourglassRemaining / 60);
+    const seconds = hourglassRemaining % 60;
+    hourglassTime.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    hourglass.style.setProperty("--sand-progress", String((hourglassDuration - hourglassRemaining) / hourglassDuration));
+
+    const nextMessage = hourglassMessages.find(([threshold]) => hourglassRemaining >= threshold);
+    hourglassMessage.textContent = nextMessage ? nextMessage[1] : hourglassMessages.at(-1)[1];
+
+    const isRunning = Boolean(hourglassTimer);
+    hourglass.classList.toggle("running", isRunning);
+    hourglass.classList.toggle("complete", hourglassRemaining === 0);
+    hourglassToggle.textContent = isRunning ? "Pausar" : hourglassRemaining === 0 ? "Mais um minuto" : hourglassRemaining < hourglassDuration ? "Continuar" : "Iniciar";
+  };
+
+  const pauseHourglass = () => {
+    clearInterval(hourglassTimer);
+    hourglassTimer = null;
+    renderHourglass();
+  };
+
+  const startHourglass = () => {
+    if (hourglassRemaining === 0) hourglassRemaining = hourglassDuration;
+    hourglassTimer = setInterval(() => {
+      hourglassRemaining -= 1;
+      if (hourglassRemaining <= 0) {
+        hourglassRemaining = 0;
+        pauseHourglass();
+      } else {
+        renderHourglass();
+      }
+    }, 1000);
+    renderHourglass();
+  };
+
+  hourglassToggle.addEventListener("click", () => {
+    if (hourglassTimer) pauseHourglass();
+    else startHourglass();
+  });
+
+  hourglassReset.addEventListener("click", () => {
+    pauseHourglass();
+    hourglassRemaining = hourglassDuration;
+    hourglassMessage.textContent = "Este minuto ainda é inteiramente seu.";
+    renderHourglass();
+  });
+
+  renderHourglass();
+
+  // Release Ritual
+  const releaseForm = document.getElementById("release-form");
+  const releaseInput = document.getElementById("release-input");
+  const releaseBtn = document.getElementById("release-btn");
+  const releaseAnimation = document.getElementById("release-animation");
+
+  releaseInput.addEventListener("input", (e) => {
+    releaseBtn.disabled = !e.target.value.trim();
+  });
+
+  releaseForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!releaseInput.value.trim()) return;
+    
+    releaseForm.classList.add("hidden");
+    releaseAnimation.classList.add("active");
+    
+    setTimeout(() => {
+      releaseInput.value = "";
+      releaseBtn.disabled = true;
+      releaseForm.classList.remove("hidden");
+      releaseAnimation.classList.remove("active");
+    }, 5000);
+  });
+
+  // Breathe Circle
+  const breatheTrigger = document.getElementById("breathe-trigger");
+  const btnPause = document.getElementById("btn-pause");
+  const textIdle = document.getElementById("text-idle");
+  const textIn = document.getElementById("text-in");
+  const textHold = document.getElementById("text-hold");
+  const textOut = document.getElementById("text-out");
+  
+  let breathePhase = "idle";
+  let breatheTimeout;
+
+  const setBreathePhase = (phase) => {
+    breathePhase = phase;
+    
+    // Reset wrapper classes
+    breatheTrigger.className = `breathe-circle-wrapper phase-${phase}`;
+    
+    // Update active texts
+    textIdle.classList.toggle("active", phase === "idle");
+    textIn.classList.toggle("active", phase === "in");
+    textHold.classList.toggle("active", phase === "hold");
+    textOut.classList.toggle("active", phase === "out");
+    
+    btnPause.classList.toggle("visible", phase !== "idle");
+
+    clearTimeout(breatheTimeout);
+    
+    if (phase === "in") {
+      breatheTimeout = setTimeout(() => setBreathePhase("hold"), 4000);
+    } else if (phase === "hold") {
+      breatheTimeout = setTimeout(() => setBreathePhase("out"), 3000);
+    } else if (phase === "out") {
+      breatheTimeout = setTimeout(() => setBreathePhase("in"), 5000);
+    }
+  };
+
+  breatheTrigger.addEventListener("click", () => {
+    if (breathePhase === "idle") {
+      setBreathePhase("in");
+    } else {
+      setBreathePhase("idle");
+    }
+  });
+
+  btnPause.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setBreathePhase("idle");
+  });
+
+  // Gratitude Section
+  const gratitudeForm = document.getElementById("gratitude-form");
+  const gratitudeInput = document.getElementById("gratitude-input");
+  const gratitudeSubmit = document.getElementById("gratitude-submit");
+  const gratitudeGallery = document.getElementById("gratitude-gallery");
+  const galleryGrid = document.getElementById("gallery-grid");
+
+  let entries = [];
+
+  const loadEntries = () => {
+    const saved = localStorage.getItem("gratidao_viva_entries");
+    if (saved) {
+      try { entries = JSON.parse(saved); } catch (e) {}
+    }
+    renderEntries();
+  };
+
+  const saveEntries = () => {
+    localStorage.setItem("gratidao_viva_entries", JSON.stringify(entries));
+  };
+
+  const renderEntries = () => {
+    if (entries.length > 0) {
+      gratitudeGallery.classList.add("has-entries");
+      galleryGrid.innerHTML = "";
+      entries.forEach((entry) => {
+        const date = new Date(entry.date).toLocaleDateString("pt-BR", {
+          day: "2-digit", month: "short", year: "numeric"
+        });
+        
+        const card = document.createElement("div");
+        card.className = "gratitude-card";
+        card.innerHTML = `
+          <p>"${entry.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}"</p>
+          <div class="card-footer">
+            <span class="card-date">${date}</span>
+            <button class="card-delete" aria-label="Remover gratidão" title="Remover" data-id="${entry.id}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        `;
+        galleryGrid.appendChild(card);
+      });
+      
+      document.querySelectorAll(".card-delete").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const id = e.currentTarget.getAttribute("data-id");
+          entries = entries.filter(ent => ent.id !== id);
+          saveEntries();
+          renderEntries();
+        });
+      });
+    } else {
+      gratitudeGallery.classList.remove("has-entries");
+      galleryGrid.innerHTML = "";
+    }
+  };
+
+  gratitudeInput.addEventListener("input", (e) => {
+    gratitudeSubmit.disabled = !e.target.value.trim();
+  });
+
+  gratitudeForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = gratitudeInput.value.trim();
+    if (!text) return;
+    
+    entries.unshift({
+      id: window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      text,
+      date: new Date().toISOString()
+    });
+    
+    saveEntries();
+    renderEntries();
+    
+    gratitudeInput.value = "";
+    gratitudeSubmit.disabled = true;
+  });
+
+  loadEntries();
+});
+  </script>
+</head>
+<body>
+  <div class="app">
+    <div class="noise-overlay"></div>
+    <div class="ambient-lights">
+       <div class="light light-primary"></div>
+       <div class="light light-accent"></div>
+    </div>
+    
+    <header class="header">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <h1>Gratidão Viva</h1>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema">
+        <svg id="icon-moon" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg id="icon-sun" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+    </header>
+    
+    <main class="main">
+      <!-- Section 1 -->
+      <section class="section-hero">
+        <div class="fade-in">
+          <h2 class="hero-title">A beleza do que<br><span>é efêmero.</span></h2>
+        </div>
+        <div class="digital-hourglass fade-in delay-200" id="digital-hourglass" style="--sand-progress: 0;">
+          <div class="hourglass-figure" aria-hidden="true">
+            <div class="hourglass-frame">
+              <span class="hourglass-cap hourglass-cap-top"></span>
+              <span class="hourglass-cap hourglass-cap-bottom"></span>
+              <span class="sand sand-top"></span>
+              <span class="sand-stream"></span>
+              <span class="sand sand-bottom"></span>
+            </div>
+          </div>
+          <div class="hourglass-content">
+            <p class="hourglass-eyebrow">Um minuto de presença</p>
+            <output class="hourglass-time" id="hourglass-time" aria-live="polite">01:00</output>
+            <p class="hourglass-message" id="hourglass-message">Este minuto ainda é inteiramente seu.</p>
+            <div class="hourglass-controls">
+              <button class="hourglass-btn hourglass-btn-primary" id="hourglass-toggle" type="button">Iniciar</button>
+              <button class="hourglass-btn" id="hourglass-reset" type="button">Recomeçar</button>
+            </div>
+          </div>
+        </div>
+        <div class="fade-in delay-200">
+          <p class="hero-text">Nenhum instante se repete. A vida flui com uma pressa silenciosa, lembrando-nos de que a nossa presença aqui é passageira. Essa brevidade não é uma falha, mas o que confere contorno e valor a cada experiência.</p>
+        </div>
+      </section>
+      
+      <div class="divider"></div>
+      
+      <!-- Section 2 -->
+      <section class="section-standard">
+        <div class="fade-in">
+          <h2 class="section-title">A arquitetura do pensamento.</h2>
+        </div>
+        <div class="fade-in delay-200">
+          <p class="section-text">O que escolhemos focar torna-se a nossa realidade. Nossos pensamentos não alteram as leis físicas do universo, mas esculpem a nossa atenção. Eles determinam as escolhas que fazemos e a forma como nos encontramos com o mundo. Onde você tem demorado o seu olhar?</p>
+        </div>
+      </section>
+      
+      <!-- Section 3 -->
+      <section class="section-standard">
+        <div class="fade-in">
+          <h2 class="section-title">O sagrado no cotidiano.</h2>
+        </div>
+        <div class="fade-in delay-200">
+          <p class="section-text">Muitas vezes aguardamos por eventos extraordinários, esquecendo que somos sustentados pela quietude das horas comuns. A luz do sol atravessando a janela, o sabor de um pão quente, um silêncio compartilhado. O sentido não reside na grandiosidade, mas na nossa capacidade de notar o simples.</p>
+        </div>
+      </section>
+      
+      <div class="divider"></div>
+      
+      <!-- Section 4 -->
+      <section class="section-standard">
+        <div class="fade-in">
+          <h2 class="section-title" style="margin-bottom: 1.5rem;">O que precisa ir?</h2>
+          <p class="section-text">Antes de abraçar o novo, é preciso esvaziar as mãos. Preocupações, ressentimentos e ansiedades ocupam um espaço precioso. Observe o que lhe pesa agora. Reconheça, e permita que o vento leve.</p>
+        </div>
+        <div class="fade-in delay-200" style="width: 100%;">
+          <div class="release-ritual">
+            <form id="release-form" class="release-form">
+              <textarea id="release-input" class="release-input" placeholder="Sinto o peso de..."></textarea>
+              <button type="submit" id="release-btn" class="release-btn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+                <span>Soltar ao vento</span>
+              </button>
+            </form>
+            <div id="release-animation" class="release-animation">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+              <p>Tudo se transforma.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <div class="divider"></div>
+      
+      <!-- Section 5 -->
+      <section class="section-standard">
+        <div class="fade-in">
+          <h2 class="section-title" style="margin-bottom: 1.5rem;">O retorno ao corpo.</h2>
+          <p class="section-text">Com as mãos mais vazias, retorne ao único lugar onde a vida efetivamente acontece: o agora. Sincronize sua respiração. Descanse no compasso do seu próprio peito.</p>
+        </div>
+        <div class="fade-in delay-200" style="width: 100%;">
+          <div class="breathe-container">
+            <div id="breathe-trigger" class="breathe-circle-wrapper phase-idle">
+              <div class="breathe-ring-1"></div>
+              <div class="breathe-ring-2"></div>
+              <div class="breathe-text">
+                <span id="text-idle" class="text-idle active">Tocar para respirar</span>
+                <span id="text-in" class="text-phase text-in">Inspirar...</span>
+                <span id="text-hold" class="text-phase text-hold">Suster...</span>
+                <span id="text-out" class="text-phase text-out">Expirar...</span>
+              </div>
+            </div>
+            <div class="breathe-pause">
+              <button id="btn-pause" class="btn-pause">Pausar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <div class="divider"></div>
+      
+      <!-- Section 6 -->
+      <section class="section-standard" style="padding-bottom: 2rem;">
+        <div class="fade-in">
+          <h2 class="section-title" style="margin-bottom: 1.5rem;">O ato de notar.</h2>
+          <p class="section-text">A gratidão não é um mandato de positividade constante, mas a escolha consciente de testemunhar o que há de bom. É o reconhecimento profundo de que, no meio de tudo, a vida pulsa. O que trouxe luz ao seu dia hoje?</p>
+        </div>
+        <div class="fade-in delay-200" style="width: 100%; margin-top: 4rem;">
+          <div class="gratitude-container">
+            <form id="gratitude-form" class="gratitude-form">
+              <div class="gratitude-form-bg"></div>
+              <div class="gratitude-header">
+                <h3>O que você notou hoje?</h3>
+                <p>Um pequeno gesto, uma luz diferente na sala, um som familiar. Ancore-se no que foi bom.</p>
+              </div>
+              <div class="gratitude-input-wrapper">
+                <textarea id="gratitude-input" class="gratitude-input" placeholder="Hoje eu reparei em..."></textarea>
+              </div>
+              <div class="gratitude-submit-wrapper">
+                <button type="submit" id="gratitude-submit" class="gratitude-submit" disabled>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.67 19a2 2 0 0 0 1.416-.588l6.154-6.172a6 6 0 0 0-8.49-8.49L5.586 9.914A2 2 0 0 0 5 11.328V18a1 1 0 0 0 1 1z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></svg>
+                  <span>Guardar registro</span>
+                </button>
+              </div>
+            </form>
+            
+            <div id="gratitude-gallery" class="gratitude-gallery">
+              <div class="gallery-header">
+                <h4>A sua constelação de instantes</h4>
+                <div class="gallery-divider"></div>
+              </div>
+              <div id="gallery-grid" class="gallery-grid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <footer class="footer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+      <p>A vida continua tecendo o agora. Gazstao 2026</p>
+    </footer>
+  </div>
+</body>
+</html>

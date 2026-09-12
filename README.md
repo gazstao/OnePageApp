@@ -12,6 +12,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 * Trilha Leis do Triunfo baseado no livro de Napoleon Hill
 * Academia de IA
 * Descoberta Vocacional
+* Gratidao na Vida
 
 ## Estrutura
 
