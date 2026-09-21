@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transurfing - O Jogo das Variantes</title>
+<style>
+:root{
+  --bg:#070b1a; --bg2:#0d1330; --card:rgba(255,255,255,.05);
+  --cyan:#4ee1ff; --violet:#9d6bff; --gold:#ffd76a; --green:#5dff9e;
+  --red:#ff5d7a; --text:#e8ecff; --dim:#9aa3c7;
+  --grad:linear-gradient(135deg,#4ee1ff,#9d6bff);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text);
+  min-height:100vh; overflow-x:hidden;
+}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:#fff;animation:tw 3s infinite alternate}
+@keyframes tw{from{opacity:.15}to{opacity:.9}}
+.wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:16px}
+
+/* ---------- HUD ---------- */
+#hud{
+  position:sticky;top:0;z-index:50;background:rgba(7,11,26,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.08);padding:10px 16px;display:none;
+}
+.hud-inner{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hud-av{width:44px;height:44px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:24px;flex:none;box-shadow:0 0 18px rgba(157,107,255,.5)}
+.hud-name{font-weight:700;font-size:14px}
+.hud-rank{font-size:11px;color:var(--gold);letter-spacing:.5px}
+.stat{flex:1;min-width:110px}
+.stat label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between}
+.bar{height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:3px}
+.bar>i{display:block;height:100%;border-radius:99px;transition:width .6s ease, background .6s}
+#b-xp>i{background:var(--grad)}
+#b-en>i{background:linear-gradient(90deg,#ffd76a,#ffb44e)}
+#b-ba>i{background:linear-gradient(90deg,#5dff9e,#4ee1ff)}
+#badges{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.badge{font-size:18px;filter:grayscale(1);opacity:.35;transition:.4s;cursor:help}
+.badge.on{filter:none;opacity:1;transform:scale(1.15);text-shadow:0 0 10px var(--gold)}
+
+/* ---------- telas ---------- */
+.screen{display:none;animation:fade .5s}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- intro ---------- */
+.hero{text-align:center;padding:70px 20px 40px}
+.hero .logo{font-size:60px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+h1.title{font-size:clamp(30px,6vw,52px);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:14px 0 8px}
+.hero p.sub{color:var(--dim);max-width:640px;margin:0 auto 8px;line-height:1.6}
+.hero .tag{display:inline-block;margin-top:14px;font-size:12px;color:var(--cyan);border:1px solid rgba(78,225,255,.35);padding:5px 14px;border-radius:99px;letter-spacing:1px}
+.btn{
+  display:inline-block;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;
+  color:#0a0e20;background:var(--grad);padding:14px 34px;border-radius:14px;margin-top:26px;
+  transition:.25s;box-shadow:0 8px 30px rgba(157,107,255,.35);
+}
+.btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 36px rgba(78,225,255,.45)}
+.btn.ghost{background:transparent;color:var(--cyan);border:1px solid rgba(78,225,255,.4);box-shadow:none}
+.btn.sm{padding:9px 18px;font-size:13px;margin-top:10px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:22px;margin-bottom:16px;backdrop-filter:blur(6px)}
+.card h2{font-size:22px;margin-bottom:10px}
+.card h3{font-size:16px;color:var(--cyan);margin:14px 0 6px}
+.card p,.card li{color:#c9d0ef;line-height:1.65;font-size:14.5px}
+.card ul{padding-left:20px}
+.quote{border-left:3px solid var(--violet);padding:10px 16px;margin:14px 0;background:rgba(157,107,255,.08);border-radius:0 12px 12px 0;font-style:italic;color:#d9d3ff}
+.pill{display:inline-block;font-size:11px;padding:3px 12px;border-radius:99px;background:rgba(78,225,255,.12);color:var(--cyan);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase}
+
+/* ---------- mapa ---------- */
+.map{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.map-node{
+  display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;cursor:pointer;
+  background:var(--card);border:1px solid rgba(255,255,255,.1);transition:.25s;position:relative;
+}
+.map-node:hover{transform:translateX(6px);border-color:rgba(78,225,255,.4)}
+.map-node .num{width:46px;height:46px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,255,255,.06)}
+.map-node.done .num{background:linear-gradient(135deg,#5dff9e22,#4ee1ff22);border:1px solid rgba(93,255,158,.4)}
+.map-node.locked{opacity:.45;cursor:not-allowed}
+.map-node.locked:hover{transform:none}
+.map-node .t{font-weight:700;font-size:15px}
+.map-node .d{font-size:12.5px;color:var(--dim);margin-top:2px}
+.map-node .chk{margin-left:auto;font-size:20px}
+.map-line{width:2px;height:14px;background:rgba(255,255,255,.12);margin-left:40px}
+
+/* ---------- quiz ---------- */
+.qbox{margin-top:16px}
+.qtext{font-size:16px;font-weight:600;margin-bottom:14px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{
+  text-align:left;padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font-size:14.5px;font-family:inherit;transition:.2s;
+}
+.opt:hover{border-color:var(--cyan);background:rgba(78,225,255,.08)}
+.opt.ok{background:rgba(93,255,158,.15);border-color:var(--green);color:var(--green)}
+.opt.no{background:rgba(255,93,122,.15);border-color:var(--red);color:var(--red)}
+.opt:disabled{cursor:default;opacity:.85}
+.feedback{margin-top:12px;font-size:14px;line-height:1.6;padding:12px 14px;border-radius:12px;display:none}
+.feedback.good{display:block;background:rgba(93,255,158,.1);border:1px solid rgba(93,255,158,.35);color:#c9ffe2}
+.feedback.bad{display:block;background:rgba(255,93,122,.1);border:1px solid rgba(255,93,122,.35);color:#ffd6de}
+
+/* ---------- pendulo game ---------- */
+.pend-stage{text-align:center;padding:20px 10px}
+.pend-visual{font-size:56px;display:inline-block;transform-origin:top center;animation:swing 2.4s ease-in-out infinite alternate}
+@keyframes swing{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+.pend-visual.dead{animation:none;transform:rotate(0);filter:grayscale(1);opacity:.35}
+.hp-bar{max-width:340px;margin:14px auto}
+.hp-bar>i{background:linear-gradient(90deg,#ff5d7a,#ff9d5d)}
+.scn{font-size:15px;color:#dfe4ff;background:rgba(255,255,255,.05);border-radius:12px;padding:14px;margin:14px 0;min-height:52px}
+.pend-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- onda game ---------- */
+.wave-area{height:230px;position:relative;overflow:hidden;border-radius:14px;background:linear-gradient(180deg,#0a1230,#0d1a45);border:1px solid rgba(255,255,255,.1);margin-top:14px}
+.wobj{
+  position:absolute;font-size:30px;cursor:pointer;user-select:none;transition:transform .15s;
+  padding:8px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+.wobj:hover{transform:scale(1.15)}
+.wobj.pop{animation:pop .35s forwards}
+@keyframes pop{to{transform:scale(2);opacity:0}}
+.wave-hud{display:flex;justify-content:space-between;font-size:13px;color:var(--dim);margin-top:8px}
+.wave-meter{height:10px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:6px}
+.wave-meter>i{display:block;height:100%;background:linear-gradient(90deg,#5dff9e,#ffd76a);transition:width .3s}
+
+/* ---------- balanco game ---------- */
+.bal-track{position:relative;height:54px;background:rgba(255,255,255,.06);border-radius:99px;margin:22px 0;overflow:hidden}
+.bal-zone{position:absolute;left:38%;width:24%;top:0;bottom:0;background:rgba(93,255,158,.22);border-left:1px dashed rgba(93,255,158,.6);border-right:1px dashed rgba(93,255,158,.6)}
+.bal-dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--grad);box-shadow:0 0 16px rgba(78,225,255,.7);transition:left .12s linear}
+.bal-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+.bal-btns{display:flex;gap:10px;justify-content:center;margin-top:14px}
+
+/* ---------- final ---------- */
+.slide-card{
+  margin-top:16px;padding:26px;border-radius:20px;text-align:center;
+  background:radial-gradient(circle at 30% 20%,rgba(78,225,255,.15),transparent 60%),radial-gradient(circle at 75% 80%,rgba(157,107,255,.18),transparent 60%),rgba(255,255,255,.04);
+  border:1px solid rgba(157,107,255,.4);
+}
+.slide-card .goal{font-size:22px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:12px 0}
+.slide-card .st{font-size:13px;color:var(--dim);line-height:1.7}
+textarea,input[type=text]{
+  width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:12px;
+  color:var(--text);font-family:inherit;font-size:14.5px;padding:12px 14px;margin-top:8px;resize:vertical;
+}
+textarea:focus,input:focus{outline:none;border-color:var(--cyan)}
+.check-lbl{display:flex;gap:10px;align-items:flex-start;padding:9px 0;font-size:14px;color:#c9d0ef;cursor:pointer}
+.check-lbl input{width:18px;height:18px;accent-color:var(--cyan);flex:none;margin-top:1px}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;bottom:18px;right:18px;z-index:99;display:flex;flex-direction:column;gap:8px}
+.toast{
+  background:rgba(13,19,48,.95);border:1px solid rgba(93,255,158,.5);color:#d9ffe9;
+  padding:12px 18px;border-radius:12px;font-size:14px;animation:slideIn .35s;box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
+@keyframes slideIn{from{transform:translateX(120%)}to{transform:none}}
+.xp-fly{
+  position:fixed;z-index:98;font-weight:800;font-size:18px;color:var(--gold);pointer-events:none;
+  text-shadow:0 0 12px rgba(255,215,106,.8);animation:fly 1.1s forwards;
+}
+@keyframes fly{to{transform:translateY(-70px);opacity:0}}
+
+/* ---------- rules ---------- */
+details.rule{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;margin-bottom:8px;padding:12px 16px}
+details.rule summary{cursor:pointer;font-weight:600;font-size:14.5px;color:var(--cyan)}
+details.rule p{margin-top:8px;font-size:13.5px}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:30px 16px 40px;line-height:1.8}
+@media(max-width:600px){.hero{padding:40px 12px 20px}.hud-av{width:38px;height:38px;font-size:20px}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<!-- ================= HUD ================= -->
+<div id="hud">
+  <div class="hud-inner">
+    <div class="hud-av">🏄</div>
+    <div>
+      <div class="hud-name" id="h-name">Surfista</div>
+      <div class="hud-rank" id="h-rank">Iniciante do Espaço das Variantes</div>
+    </div>
+    <div class="stat"><label>XP <span id="v-xp">0</span></label><div class="bar" id="b-xp"><i style="width:0%"></i></div></div>
+    <div class="stat"><label>⚡ Energia <span id="v-en">100</span></label><div class="bar" id="b-en"><i style="width:100%"></i></div></div>
+    <div class="stat"><label>⚖️ Equilíbrio <span id="v-ba">100</span></label><div class="bar" id="b-ba"><i style="width:100%"></i></div></div>
+    <div id="badges" title="Conquistas"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ================= INTRO ================= -->
+<section class="screen on" id="s-intro">
+  <div class="hero">
+    <div class="logo">🌊</div>
+    <h1 class="title">TRANSURFING</h1>
+    <p class="sub">O sistema do físico místico russo <b>Vadim Zeland</b> propõe uma radical mudança:
+    você não precisa <i>lutar</i> pela sua realidade - ela já existe no <b>Espaço das Variantes</b>,
+    em infinitas linhas de vida. O seu trabalho é <b>escolher</b>: reduzir a importância, desligar-se dos pêndulos
+    e surfar na corrente a favor, com intenção externa.</p>
+    <p class="sub" style="font-size:13px">⚠️ O Transurfing é uma <b>filosofia de vida</b>, não uma ciência comprovada -
+    use o que fizer sentido para você, com bom senso.</p>
+    <span class="tag">6 NÍVEIS • MINIGAMES • XP • CONQUISTAS • RANKS</span><br>
+    <button class="btn" onclick="startGame()">▶ INICIAR A TRAVESSIA</button>
+    <button class="btn ghost" onclick="resetGame()" id="btn-reset" style="display:none">↺ Recomeçar do zero</button>
+  </div>
+</section>
+
+<!-- ================= MAPA ================= -->
+<section class="screen" id="s-map">
+  <div class="card">
+    <span class="pill">Mapa da Travessia</span>
+    <h2 id="map-title">Escolha seu próximo nível, Surfista</h2>
+    <p>Complete cada nível para ganhar XP e subir de rank. Cada nível destrava o seguinte.
+    No final, você vai criar o seu próprio <b>Slide de Meta</b> 🎯</p>
+  </div>
+  <div class="map" id="map"></div>
+</section>
+
+<!-- ================= TELA GERAL DE NÍVEL ================= -->
+<section class="screen" id="s-level">
+  <div class="card">
+    <span class="pill" id="lv-pill">Nível</span>
+    <h2 id="lv-title"></h2>
+    <p id="lv-intro" style="margin-bottom:6px"></p>
+    <div class="quote" id="lv-quote"></div>
+    <div id="lv-concepts"></div>
+  </div>
+  <div class="card">
+    <span class="pill" id="play-pill">Missão</span>
+    <h2 id="play-title"></h2>
+    <p id="play-desc"></p>
+    <div id="play-area"></div>
+  </div>
+  <div class="card" id="lv-result" style="display:none;text-align:center">
+    <h2 id="res-h" style="color:var(--green)">✔ Nível completo!</h2>
+    <p id="res-p"></p>
+    <button class="btn" onclick="backToMap()">🗺 Voltar ao mapa</button>
+  </div>
+</section>
+
+<!-- ================= FINAL ================= -->
+<section class="screen" id="s-final">
+  <div class="card">
+    <span class="pill">Último passo</span>
+    <h2>🎯 Crie o seu Slide de Meta</h2>
+    <p>Para Zeland, a sua <b>meta verdadeira</b> é aquela que transforma a jornada num banquete -
+    não a do prestígio ou a "meta de outrem" que os pêndulos impõem.
+    Se você precisa se convencer, é a sua alma dizendo "não".</p>
+    <h3>1. Qual é a meta que faz a sua alma vibrar?</h3>
+    <input type="text" id="f-goal" placeholder="Ex.: viver do que amo, com liberdade e saúde..." maxlength="90">
+    <h3>2. Checklist da alma (seja honesto!)</h3>
+    <label class="check-lbl"><input type="checkbox" class="chk" value="meu"> Ela é <b>minha</b>, e não foi imposta por moda, família ou redes sociais</label>
+    <label class="check-lbl"><input type="checkbox" class="chk" value="banquete"> O caminho até ela já parece um <b>dia de festa</b>, não só a chegada</label>
+    <label class="check-lbl"><input type="checkbox" class="chk" value="leve"> Eu a desejo, mas <b>sem necessidade desesperada</b> (importância sob controle)</label>
+    <label class="check-lbl"><input type="checkbox" class="chk" value="porta"> Estou aberto a <b>portas inesperadas</b> - não prendo a meta a um único meio</label>
+    <button class="btn" onclick="genSlide()" id="f-btn">✨ Materializar meu Slide</button>
+  </div>
+  <div class="slide-card" id="f-out" style="display:none">
+    <div style="font-size:44px">🌅</div>
+    <div class="st" id="f-status"></div>
+    <div class="goal" id="f-goalout"></div>
+    <div class="st">
+      "No Espaço das Variantes, a linha onde esta realidade já existe<br>
+      está à sua espera. Não a force. Escolha, atue com leveza,<br>
+      ouça o murmúrio das estrelas matutinas… e deixe as maçãs caírem para o céu. 🍎☁️"
+    </div>
+    <div class="st" style="margin-top:12px;color:var(--gold)" id="f-rank"></div>
+    <button class="btn sm" onclick="backToMap()">🗺 Voltar ao mapa</button>
+    <button class="btn sm ghost" onclick="copySlide()">📋 Copiar meu Slide</button>
+  </div>
+</section>
+
+<!-- ================= REGRAS ================= -->
+<section class="screen" id="s-rules">
+  <div class="card">
+    <span class="pill">Referência</span>
+    <h2>📖 As 12 Regras de Ouro do Transurfing</h2>
+    <div id="rules"></div>
+    <button class="btn sm ghost" onclick="show('s-map')" style="margin-top:16px">🗺 Voltar ao mapa</button>
+  </div>
+</section>
+
+<footer>
+  Conteúdo baseado na obra de <b>Vadim Zeland</b> - <i>Transurfing: O Espaço das Variantes</i>,
+  <i>Murmúrio das Estrelas Matutinas</i> e <i>Transurfing de Si Mesmo</i> (Barany Editora).<br>
+  Filosofia de vida com elementos metafísicos - não possui comprovação científica. Jogue com a mente aberta e os pés no chão. 🏄<br>Gazstao 2026
+</footer>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ================================================================
+   DADOS DO JOGO
+================================================================ */
+const LEVELS=[
+{
+ id:1,icon:"🌌",title:"O Espaço das Variantes",
+ desc:"A fundação: a realidade é infinita e você escolhe entre variantes",
+ quote:"Cada pessoa é livre para escolher para si qualquer destino. É a única liberdade à nossa disposição - a liberdade de escolha.",
+ intro:"Vadim Zeland abre com o Enigma do Guardião: se todos os destinos possíveis já existem, por que gastar a vida lutando por um lugar ao sol? A resposta muda tudo.",
+ concepts:`
+  <h3>📡 O que é o Espaço das Variantes?</h3>
+  <p>Um campo de informação infinito que contém <b>todas</b> as variantes possíveis de qualquer acontecimento - o que foi, o que é e o que será.
+  Cada variante tem um <b>cenário</b> (o caminho dos eventos) e uma <b>decoration</b> (como se manifesta). Você não cria a realidade: você <b>seleciona</b> um setor dela.</p>
+  <h3>📺 A analogia do canal</h3>
+  <p>Um cristal de gelo se move por um cano cheio de água… mas na verdade o cristal não nada - a <b>estrutura</b> do gelo se desloca pela água.
+  Assim como uma onda no mar: não é a água que viaja, é a forma que se propaga. A sua realização material é uma onda passando pelo campo de variantes.</p>
+  <h3>🪞 O mundo é um espelho</h3>
+  <p>O espelho reflete a <b>relação</b> que você mantém com ele. Se você o luta, ele luta de volta. Se você muda a imagem na <b>mente</b> (a sua atitude),
+  o espelho reflete outra realidade. Atenção: não se briga com o reflexo - muda-se o rosto.</p>
+  <h3>🚫 Desejos não se realizam. Escolhas sim.</h3>
+  <p>Sonar e querer não é escolher. Desejo carrega falta; escolha carrega decisão. É essa diferença que o Transurfing explora.</p>`,
+ quiz:[
+ {q:"Segundo o modelo das variantes, qual é a atitude correta em relação à felicidade?",
+  o:["Lutar e conquistar um lugar ao sol","Aceitar o destino predeterminado","Construir você mesmo o seu mundo do zero","Escolher a variante desejada, sem luta"],a:3,
+  f:"O Guardião do horto é taxativo: ninguém lhe proíbe de escolher o destino que apraz. Lutar é ineficiente."},
+ {q:"No modelo do Transurfing, o que 'materializa' uma variante?",
+  o:["A força de vontade bruta","A irradiação da energia dos pensamentos, que sintoniza um setor","A meditação infinita","As orações feitas em voz alta"],a:1,
+  f:"Os pensamentos têm parâmetros de frequência - como ondas de rádio. A irradiação 'acende' o setor correspondente."},
+ {q:"O que diferencia escolha de desejo no Transurfing?",
+  o:["Nada, é sinônimo","A escolha é uma determinação firme, sem carregar falta; o desejo se alimenta da necessidade","O desejo é mais forte","A escolha não precisa de ação"],a:1,
+  f:"'Os desejos se cumprem apenas nos contos de fadas.' Escolha é decisão + intenção, sem a carga da necessidade."}
+ ]
+},
+{
+ id:2,icon:"🕰️",title:"Pêndulos",
+ desc:"Desative os pêndulos: as estruturas que se alimentam da sua energia",
+ quote:"Você não atrai o que quer. Você atrai o que não quer - porque reações, positivas ou negativas, são energia entregue.",
+  intro:`Quando um grupo de pessoas pensa na mesma direção, nasce uma estrutura energoinformacional: o pêndulo.
+  Religiões, torcidas, marcas, pânico, crises… todos alimentam essas máquinas. E há um paradoxo mortal: <b>até odiar é alimentar.</b>`,
+ concepts:`
+  <h3>⚡ Como os pêndulos caçam</h3>
+  <p>Eles usam os <b>cordões das marionetes</b>: medo, culpa, ansiedade, complexos. Não importa se você ama ou odeia -
+  o pêndulo quer a sua <b>energia emocional</b>. A sua raiva é o mesmo combustível do seu amor, para ele.</p>
+  <h3>🌀 O paradoxo: 'você atrai o que não quer'</h3>
+  <p>Resistir a algo é focar nele. Quem luta contra um pêndulo o acorda, o amplifica e é arrastado para a linha de vida onde a sua obsessão se multiplica.</p>
+  <h3>🪤 A queda induzida</h3>
+  <p>A resposta emocional a um evento negativo <b>não é só reação - é o mecanismo da transição</b>. Você não é puxado para o pesadelo;
+  a sua própria reação o transporta. Por isso profissionais treinam responder, nunca reagir.</p>
+  <h3>🌫️ Como escapar (as 2 únicas formas)</h3>
+  <ul>
+   <li><b>Vaziear:</b> perder o interesse, ficar indiferente - o pêndulo não conecta o vazio. 'Atravesse como sombra.'</li>
+   <li><b>Ação imprevisível:</b> quebrar o roteiro. Humor onde se espera fúria, calma onde se espera briga. O pêndulo precisa de reação previsível.</li>
+  </ul>`,
+ game:"pendulo",
+ pend:{
+  name:"O PÊNDULO DA POLÊMICA",hp:6,
+  scenes:[
+   "📰 Um título indignante sobre algo que você detesta invade o seu feed…",
+   "📱 Alguém publica uma opinião terrível sobre um tema que você ama…",
+   "🗣️ Em uma discussão, todos começam a te puxar para o lado deles…",
+   "💸 Uma notícia de crise econômica te deixa apertando os punhos…",
+   "📺 Um debate que você 'sabe que está certo' começa a te empolgar…",
+   "😡 Lembra de um desrespeito antigo e o sangue ferve de novo…"
+  ]
+ }
+},
+{
+ id:3,icon:"🍀",title:"A Onda de Sucesso",
+ desc:"Surfe na corrente de eventos favoráveis - e não rem contra",
+ quote:"A Onda de Sucesso segue apenas se você ganhar impulso desde o primeiro sucesso.",
+  intro:`Êxito e fracasso seguem um ao outro como listas brancas e pretas.
+  O Transurfing dá o nome ao mecanismo: a Onda de Sucesso é um conjunto de linhas de vida positivas - e ela se agarra por pequenas vitórias.`,
+ concepts:`
+  <h3>🎯 O efeito bumerangue</h3>
+  <p>Quem reclama da má sorte não descreve a vida - está <b>construindo</b> o próximo trecho dela. O pensamento com sentimento
+  volta como circunstância. O antídoto: a <b>transmissão</b> - saborear e narrar deliberadamente os sucessos, mesmo os mínimos.</p>
+  <h3>🌊 Como surfar a onda</h3>
+  <ul>
+   <li>Feche a mente para más notícias - não evite ativamente, apenas não alimente.</li>
+   <li>Abra-a para os bons eventos e crie os pequenos: o bumerangue de retorno.</li>
+   <li>Não force a onda: tentar 'fazer' a sorte é, em si, importância excessiva.</li>
+  </ul>
+  <h3>🎭 Rituais</h3>
+  <p>Negociadores que juram um ritual de sorte antes de fechar negócios? O ritual não tem poder - ele <b>acalma a mente</b> e ajusta a expectativa
+  para a confiança. É a energia sintonizada que conta, não o amuleto.</p>`,
+ game:"onda"
+},
+{
+ id:4,icon:"⚖️",title:"Equilíbrio & Potenciais Excedentes",
+ desc:"A importância excessiva é o inimigo invisível dos seus objetivos",
+ quote:"A importância é a única resistência no caminho da realização da intenção.",
+ intro:"Aqui mora o segredo mais contraintuitivo do Transurfing: querer demais pode ser exatamente o que impede de conseguir.",
+ concepts:`
+  <h3>🎈 Potencial excedente</h3>
+  <p>Quando você sobreaevalua - internal ou externamente - uma pessoa, meta, risco ou até a si mesmo, cria uma bolha de energia.
+  As <b>forças de equilíbrio</b> surgem automaticamente para nivelar… e frequentemente produzem <b>exatamente o oposto</b> do que você queria.</p>
+  <h3>🎭 Os disfarces da importância</h3>
+  <ul>
+   <li><b>Insatisfação e julgamento:</b> a crítica constante alimenta o desequilíbrio.</li>
+   <li><b>Relação de dependência:</b> 'se isso não acontecer, acabo' - pressão máxima.</li>
+   <li><b>Idealização:</b> quem idoliza só recebe decepção.</li>
+   <li><b>Desprezo e vanglória:</b> a confiança fabricada é o mesmo desequilíbrio, só que virada para fora.</li>
+   <li><b>Culpa e 'dever':</b> inclusive o dinheiro tratado como fim - ele é atributo, não meta.</li>
+  </ul>
+  <h3>😌 A antídoto: reduzir a importância</h3>
+  <p>Não é ficar sem emoção. É mudar de atitude: querer, mas soltar; agir, mas sem torcer o mundo.
+  O humor é a melhor ferramenta - ele desinfla situações que incharam além do tamanho real.</p>`,
+ game:"balanco"
+},
+{
+ id:5,icon:"🎯",title:"Intenção & Slides",
+ desc:"Intenção interna vs externa - e como criar seu slide de meta",
+ quote:"Se você precisa se convencer a dizer sim, é a sua alma que está dizendo não.",
+  intro:`A maioria das vidas é vivida a remo, contra a corrente. O Transurfing ensina a deixar a vela apanhar o vento -
+  e a ferramenta é a distinção entre duas intenções.`,
+ concepts:`
+  <h3>🚣 Intenção interna</h3>
+  <p>A determinação de <b>fazer</b>: vontade, esforço, ação direta. Necessária para mover o corpo, mas sozinha é remar um barco de papel.</p>
+  <h3>💨 Intenção externa</h3>
+  <p>A determinação de <b>possuir</b>: nasce da unidade da alma e da mente - um saber sem lógica, uma confiança sem esforço.
+  Ela alinha as circunstâncias, abre portas que você não sabia que existiam. Não é fabricada: é liberada ao soltar a importância.</p>
+  <h3>🎞️ Slides</h3>
+  <p>Seus pensamentos favoritos são <b>slides</b> - filmes mentais que você reprisa. Slide negativo (repete o fracasso) te transporta para a linha onde o fracasso acontece.
+  A técnica: criar um <b>slide de meta</b> - a imagem viva do estado final - e, dia a dia, o <b>slide de processo</b>: apenas o próximo degrau da escada.</p>
+  <h3>📡 Meta verdadeira vs meta alheia</h3>
+  <ul>
+   <li>Meta alheia: parece dever, brilha por prestígio, é 'perseguida porque é difícil', e gera tensão que você racionaliza.</li>
+   <li>Meta verdadeira: faz a <b>jornada</b> parecer festa. Se só vai ser feliz quando chegar, já é sinal de alerta.</li>
+  </ul>`,
+ quiz:[
+ {q:"Intenção interna é…",
+  o:["A confiança de que o desejo já existe, e a vida traz","A determinação de fazer: ação e esforço direcionado","A mesma coisa que a externa","A meditação guiada"],a:1,
+  f:"Interna = a força de mover (fazer). Externa = a quietude de possuir - as circunstâncias se alinham."},
+ {q:"A Intenção Externa surge quando…",
+  o:["Vocês gritam mais forte o desejo","Há unidade de alma e mente, sem importância excessiva","Seu ego está inflado","Você controla todos os meios"],a:1,
+  f:"Ela não se fabrica com esforço - se libera quando a importância desce e coração e mente deixam de puxar em direções opostas."},
+ {q:"O 'slide de processo' visualiza…",
+  o:["Todo o caminho até a meta em detalhes","Apenas o próximo degrau à sua frente","A meta como prêmio distante","Seus fracassos passados"],a:1,
+  f:"Como a mãe que aponta apenas o próximo degrau para o filho. Além do próximo passo, o fluxo mostra o resto."}
+ ]
+},
+{
+ id:6,icon:"🌟",title:"Fluxo das Variantes & Alma Frágil",
+ desc:"O murmúrio das estrelas matutinas: ouça a alma",
+ quote:"Se você parar o trem dos pensamentos e simplesmente contemplar o vazio, você ouve o murmúrio das estrelas matutinas - a voz interior que não tem palavras.",
+ intro:"O capítulo final une tudo: a intuição, as portas, o seu objetivo-estrela e a sua assinatura única no universo - a Alma Frágil.",
+ concepts:`
+  <h3>🐾 Pedinte, Magoado, Guerreiro</h3>
+  <p>A maioria vive num destes papéis: o Pedinte (pede ao mundo), o Magoado (exige e se ofende) ou o Guerreiro (luta contra tudo).
+  O Transurfing oferece o quarto caminho: <b>nem pedir, nem exigir, nem lutar - apenas ir e tomar.</b> Declarar a meta e dar passos.</p>
+  <h3>🌊 Mover com a corrente</h3>
+  <p>O fluxo segue o caminho de menor <b>resistência energética</b>, não o de menor esforço. As soluções certas estão na superfície -
+  e são as mais simples. Não bata com as mãos na água: faça movimentos suaves e deixe a correnteza carregar.</p>
+  <h3>🚪 Portas</h3>
+  <p>A meta é o destino; a porta é o caminho. Porta falsa se abre com facilidade e bate no pior momento. Porta verdadeira é silenciosa,
+  simples, e ninguém mais briga para passar por ela. E nunca aposte a meta inteira em uma única porta - tenha plano B.</p>
+  <h3>✨ Alma Frágil & Sinais</h3>
+  <p>Existe um setor-estrela construído sob medida para a sua alma. A Alma Frágil é o que sobra quando tudo o imposto é deixado cair -
+  a nota que só você pode soar. Sinais surgem antes da transição de linha: um frio na barriga, um 'algo não está certo'.
+  A técnica de sinais é a menos confiável do sistema - leia o presente, não o horizonte. E acima de tudo:
+  <b>se você precisa se convencer, é a alma dizendo não.</b></p>`,
+ quiz:[
+ {q:"O caminho do Transurfing, em relação ao mundo, é…",
+  o:["Pedir insistentemente ao universo","Exigir seus direitos como Guerreiro","Lutar até conquistar","Nem pedir, nem exigir, nem lutar - ir e tomar"],a:3,
+  f:"Declara-se a meta e caminha-se nela. O mundo só se ocupa de realizar a escolha."},
+ {q:"O que é a Alma Frágil?",
+  o:["Um defeito a corrigir","A sua assinatura única, a nota que só você pode soar","O ego inflado","A capacidade de convencer outros"],a:1,
+  f:"É o que resta quando as máscaras impostas caem. Quem vive em harmonia com ela emite o brilho que os pêndulos temem."},
+ {q:"Sobre os sinais no fluxo das variantes, o Transurfing ensina que…",
+  o:["Sinais garantem o resultado final","Um sinal fala do elo atual, não do horizonte distante","Quanto mais sinais, melhor","Sinais são sempre positivos"],a:1,
+  f:"A leitura de sinais é a técnica menos confiável do sistema: bom sinal hoje não garante daqui a 10 anos. Não interprete além da conta."}
+ ]
+}
+];
+
+const RULES=[
+["1. Escolha, não lute","O Espaço das Variantes contém todas as realidades. A irradiação dos pensamentos materializa a variante sintonizada. Não se muda o cenário - escolhe-se outro."],
+["2. Desligue-se dos pêndulos","Reconheça que existem e têm direito a existirem. Perca o interesse, fique vazio. Pêndulo não conecta o vazio. E quebre o roteiro com ações imprevisíveis."],
+["3. Transmita o positivo","Aceite e transmita energia negativa e você constrói o seu inferno. Feche a mente ao mal e abra-a ao bom. Os pequenos sucessos são os precursores da Onda."],
+["4. Reduza a importância","A importância é o potencial excedente em sua forma mais pura. Solte-a e você entra no equilíbrio: vazio, imune aos pêndulos, livre para escolher."],
+["5. Não entre na camada do negativo","Não evite ativamente o mal, mas também não o alimente. Indiferença consciente: 'não deixe a informação negativa entrar na camada do seu mundo'."],
+["6. Ouça o murmúrio das estrelas matutinas","Se você precisa se convencer, a alma está dizendo não. O desconforto espiritual é um sinal de que a linha não é sua."],
+["7. Mova-se com a corrente","Tudo deve ser feito do jeito mais fácil e simples possível. A solução certa está na superfície. Não seja o barquinho de papel, nem quem rema contra."],
+["8. Alinhe as intenções","A intenção interna (fazer) deve apontar para a unidade de alma e mente. A intenção externa (possuir) realiza - uma certeza sem palavras, sem hesitação."],
+["9. Crie um slide positivo","Viva no seu slide, não apenas olhe. Detalhes, sensações, alegria. Deleite-se: o slide incorpora o incrível à sua zona de conforto."],
+["10. Visualize o processo, não só o fim","Apare ao próximo degrau. Quando a meta entra na zona de conforto (deixa de parecer impossível), a Intenção Externa mostra a solução."],
+["11. Sintonize sua Alma Frágil","Convença-se de que é digno de amor em primeiro lugar. Ignore os estereótipos dos pêndulos. Atreva-se a ser a sua magnífica individualidade."],
+["12. Meta é festa, porta é fascínio","Se a meta é dever, prestígio ou prova para alguém, não é sua. A felicidade vem durante a jornada, não depois. Uma meta principal realiza todas as outras."]
+];
+
+const BADGES=[
+ {id:"b1",icon:"🌌",name:"Despertar - completou o Espaço das Variantes"},
+ {id:"b2",icon:"🕰️",name:"Caçador de Pêndulos - eliminou o pêndulo da polêmica"},
+ {id:"b3",icon:"🍀",name:"Domador de Ondas - surfou 12+ eventos positivos"},
+ {id:"b4",icon:"⚖️",name:"Mestre do Equilíbrio - 70%+ de tempo na zona neutra"},
+ {id:"b5",icon:"🎯",name:"Arquiteto da Intenção - dominou as duas intenções"},
+ {id:"b6",icon:"🌟",name:"Alma Frágil - atravessou o fluxo completo"},
+ {id:"b7",icon:"🎬",name:"Slide Materializado - criou a meta da alma"},
+ {id:"b8",icon:"🏄",name:"TRANSURFER - completou a travessia"}
+];
+
+const RANKS=[[0,"Iniciante do Espaço das Variantes"],[120,"Aprendiz da Onda"],[260,"Surfista de Variantes"],[420,"Navegador de Fluxo"],[600,"Mago das Variantes"],[800,"TRANSURFER ⭐"]];
+
+/* ================================================================
+   ESTADO
+================================================================ */
+let S=null;
+function fresh(){return {xp:0,energy:100,balance:100,badges:[],done:{},name:"Surfista"}}
+function load(){try{S=JSON.parse(localStorage.getItem("transurf"))||fresh()}catch(e){S=fresh()}}
+function save(){try{localStorage.setItem("transurf",JSON.stringify(S))}catch(e){}}
+load();
+
+/* ================================================================
+   UI BASE
+================================================================ */
+const $=id=>document.getElementById(id);
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function stars(){
+  const c=$("stars");let h="";
+  for(let i=0;i<90;i++){
+    h+=`<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*100}%;width:${1+Math.random()*2.4}px;height:${1+Math.random()*2.4}px;animation-delay:${Math.random()*3}s"></div>`;
+  }
+  c.innerHTML=h;
+}
+stars();
+
+function toast(msg){
+  const t=document.createElement("div");t.className="toast";t.textContent=msg;
+  $("toasts").appendChild(t);
+  setTimeout(()=>{t.style.transition="opacity .5s";t.style.opacity=0;setTimeout(()=>t.remove(),500)},3200);
+}
+function flyXP(txt){
+  const e=document.createElement("div");e.className="xp-fly";e.textContent=txt;
+  e.style.left=(35+Math.random()*30)+"%";e.style.top="40%";
+  document.body.appendChild(e);setTimeout(()=>e.remove(),1100);
+}
+function rank(){let r=RANKS[0][1];for(const[mp,n]of RANKS)if(S.xp>=mp)r=n;return r}
+function hud(){
+  $("h-rank").textContent=rank();
+  const next=RANKS.find(r=>S.xp<r[0]);
+  const pct=next?Math.min(100,S.xp/next[0]*100):100;
+  $("b-xp").firstElementChild.style.width=pct+"%";
+  $("v-xp").textContent=S.xp+(next?" / "+next[0]:"");
+  $("v-en").textContent=S.energy;$("b-en").firstElementChild.style.width=S.energy+"%";
+  $("v-ba").textContent=S.balance;$("b-ba").firstElementChild.style.width=S.balance+"%";
+  $("badges").innerHTML=BADGES.map(b=>`<span class="badge ${S.badges.includes(b.id)?"on":""}" title="${b.name}">${b.icon}</span>`).join("");
+  save();
+}
+function gainXP(n,src){
+  const oldRank=rank();
+  S.xp+=n;hud();flyXP("+"+n+" XP");
+  const newRank=rank();
+  if(newRank!==oldRank)toast("🌟 RANK UP! Você é: "+newRank);
+  toast((src?src+" +":"")+"+"+n+" XP");
+}
+function loseEnergy(n){S.energy=Math.max(0,S.energy-n);hud();
+  if(S.energy<=30)toast("⚡ Energia baixa! Respire, reduza a importância, recupere-se…")}
+function loseBalance(n){S.balance=Math.max(0,S.balance-n);hud();}
+function recover(){S.energy=Math.min(100,S.energy+10);S.balance=Math.min(100,S.balance+8);hud();}
+function badge(id){
+  if(!S.badges.includes(id)){
+    S.badges.push(id);hud();
+    const b=BADGES.find(x=>x.id===id);
+    toast("🏅 Conquista: "+b.name);
+  }
+}
+
+/* ================================================================
+   NAVEGAÇÃO
+================================================================ */
+function startGame(){
+  $("hud").style.display="block";
+  hud();
+  if(Object.keys(S.done).length>0)$("btn-reset").style.display="inline-block";
+  renderMap();show("s-map");
+}
+function resetGame(){
+  if(confirm("Recomeçar a travessia do zero? Todo o progresso será apagado.")){
+    S=fresh();save();hud();renderMap();show("s-map");toast("↺ Jornada reiniciada. Bom surf!");
+  }
+}
+function renderMap(){
+  const m=$("map");m.innerHTML="";
+  LEVELS.forEach((lv,i)=>{
+    const unlocked=i===0||S.done[LEVELS[i-1].id];
+    const done=!!S.done[lv.id];
+    const div=document.createElement("div");
+    div.className="map-node"+(done?" done":"")+(unlocked?"":" locked");
+    div.innerHTML=`<div class="num">${lv.icon}</div>
+      <div><div class="t">Nível ${lv.id} - ${lv.title}</div><div class="d">${lv.desc}</div></div>
+      <div class="chk">${done?"✅":unlocked?"🔓":"🔒"}</div>`;
+    if(unlocked)div.onclick=()=>openLevel(lv);
+    m.appendChild(div);
+    if(i<LEVELS.length-1){const l=document.createElement("div");l.className="map-line";m.appendChild(l);}
+  });
+  const all=Object.keys(S.done).length>=6;
+  if(all){
+    badge("b8");
+    const b=document.createElement("div");b.className="map-node done";b.style.background="linear-gradient(135deg,rgba(93,255,158,.08),rgba(255,215,106,.08))";
+    b.innerHTML=`<div class="num">🎬</div><div><div class="t">FINAL - Crie seu Slide de Meta</div><div class="d">Complete a travessia e materialize a meta da sua alma</div></div><div class="chk">⭐</div>`;
+    b.onclick=()=>openFinal();m.appendChild(b);
+  }
+  // botão regras
+  const r=document.createElement("button");r.className="btn ghost sm";r.textContent="📖 Ler as 12 Regras de Ouro";
+  r.onclick=()=>{renderRules();show("s-rules")};
+  m.appendChild(r);
+}
+function backToMap(){renderMap();show("s-map");}
+
+/* ================================================================
+   MOTOR DE NÍVEL
+================================================================ */
+let cur=null;
+function openLevel(lv){
+  cur=lv;
+  $("lv-pill").textContent="Nível "+lv.id+" de 6";
+  $("lv-title").textContent=lv.icon+" "+lv.title;
+  $("lv-intro").textContent=lv.intro;
+  $("lv-quote").textContent="“"+lv.quote+"” - Vadim Zeland";
+  $("lv-concepts").innerHTML=lv.concepts;
+  $("lv-result").style.display="none";
+
+  const hasGame=!!lv.game;
+  $("play-pill").textContent=hasGame?"Mini-game":"Quiz de domínio";
+  $("play-title").textContent=hasGame
+    ? (lv.game==="pendulo"?"🕰️ Elimine o Pêndulo da Polêmica":
+       lv.game==="onda"?"🍀 Surfe a Onda de Sucesso":"⚖️ Mantenha-se no Equilíbrio")
+    : "🧠 Prove que entendeu o nível";
+  $("play-desc").innerHTML=hasGame
+    ? (lv.game==="pendulo"?"O pêndulo tem <b>6 de energia</b>. Em cada cenário, escolha sua resposta. Reações o alimentam; <b>indiferença o enfraquece</b>. Você tem vidas infinitas de tentativa de atenção, mas cada erro drena a SUA energia."
+       :lv.game==="onda"?"Eventos aparecem na correnteza em <b>30 segundos</b>. Clique apenas nos <b>positivos</b> 🍀💫🎁 (ganha onda). Toque num <b>negativo</b> 📰🗯️👿 e a onda perde força. Meta: <b>12 de onda</b>."
+       :"Um potencial excedente (o 'importância') oscila à sua esquerda e à sua direita. Use as setas para mantê-lo na <b>zona verde central</b> durante <b>25 segundos</b>. Se fugir da zona, sua Equilíbrio drena.")
+    : "Responda as 3 perguntas com clareza. Cada acerto: +20 XP. Erro: perde energia (o espelho reflete a hesitação 😉).";
+  $("play-area").innerHTML="";
+  if(hasGame){
+    if(lv.game==="pendulo")pendGame(lv);
+    else if(lv.game==="onda")ondaGame(lv);
+    else balancoGame(lv);
+  }else{
+    quizGame(lv);
+  }
+  show("s-level");
+}
+
+/* ---------- QUIZ ---------- */
+function quizGame(lv){
+  let i=0,score=0;
+  const area=$("play-area");
+  function drawQ(){
+    const q=lv.quiz[i];
+    area.innerHTML=`<div class="qbox">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--dim)">
+        <span>Pergunta ${i+1} / ${lv.quiz.length}</span><span style="color:var(--green)">Acertos: ${score}</span></div>
+      <div class="qtext" style="margin-top:10px">${q.q}</div>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="fb"></div></div>`;
+    const box=$("opts");
+    q.o.forEach((o,idx)=>{
+      const b=document.createElement("button");b.className="opt";b.textContent=o;
+      b.onclick=()=>answer(b,idx,q);box.appendChild(b);
+    });
+  }
+  function answer(btn,idx,q){
+    const fb=$("fb");
+    document.querySelectorAll("#opts .opt").forEach(b=>b.disabled=true);
+    if(idx===q.a){
+      btn.classList.add("ok");score++;
+      fb.className="feedback good";fb.innerHTML="✅ "+q.f;
+      gainXP(20);recover();
+    }else{
+      btn.classList.add("no");
+      document.querySelectorAll("#opts .opt")[q.a].classList.add("ok");
+      fb.className="feedback bad";fb.innerHTML="❌ "+q.f;
+      loseEnergy(15);loseBalance(5);
+    }
+    const nx=document.createElement("button");nx.className="btn sm";
+    nx.textContent=i+1<lv.quiz.length?"Próxima →":"Concluir ✓";
+    nx.onclick=()=>{i++;i<lv.quiz.length?drawQ():finishLevel(lv,score,3);};
+    fb.appendChild(document.createElement("br"));fb.appendChild(nx);
+  }
+  drawQ();
+}
+function finishLevel(lv,note){
+  if(!S.done[lv.id]){S.done[lv.id]=true;gainXP(30,"Bônus do nível "+lv.id);
+    if(lv.id===1)badge("b1");if(lv.id===2)badge("b2");if(lv.id===3)badge("b3");
+    if(lv.id===4)badge("b4");if(lv.id===5)badge("b5");if(lv.id===6)badge("b6");
+  }
+  const all=Object.keys(S.done).length>=6;
+  if(all)badge("b8");
+  $("res-h").textContent="🌊 Nível "+lv.id+" completo!";
+  $("res-p").innerHTML=(note||"")+"<br>Próxima: o fluxo das variantes é seu agora. Sinta a corrente mudando direção…";
+  $("lv-result").style.display="block";
+  $("lv-result").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+/* ---------- JOGO PÊNDULO ---------- */
+function pendGame(lv){
+  const P=lv.pend;let hp=P.hp,scene=0,locked=false;
+  const area=$("play-area");
+  function drawScene(){
+    locked=false;
+    area.innerHTML=`<div class="pend-stage">
+      <div class="pend-visual" id="pvis">🕰️</div>
+      <div style="margin-top:10px;font-weight:700">${P.name} - Energia: ${hp} / ${P.hp}</div>
+      <div class="hp-bar"><div class="bar"><i style="width:${hp/P.hp*100}%"></i></div></div>
+      <div class="scn" id="scn"></div>
+      <div class="pend-btns">
+        <button class="btn sm" id="b-react">😤 Reagir com emoção</button>
+        <button class="btn sm" id="b-fight">⚔️ Lutar contra</button>
+        <button class="btn sm" id="b-ign">🌫️ Indiferença - atravessar como sombra</button>
+      </div>
+      <div class="feedback" id="fb"></div></div>`;
+    $("scn").textContent=P.scenes[scene % P.scenes.length];
+    $("b-react").onclick=()=>move(1,"😤 Você entregou energia emocional! Para o pêndulo, raiva e amor são o mesmo combustível. <b>+1 de energia no pêndulo, −15 de energia sua.</b>");
+    $("b-fight").onclick=()=>move(2,"⚔️ Lutar é a pior escolha: você o acorda, o amplia e é arrastado. <b>+2 no pêndulo, −20 de energia sua.</b> 'O que você resiste, persiste.'");
+    $("b-ign").onclick=()=>move(-1,"🌫️ Perfeito. Vazio. Sem reação previsível, o pêndulo não tem em que empurrar. <b>−1 de energia nele.</b> +15 XP");
+  }
+  function move(d,txt){
+    if(locked)return;
+    locked=true;
+    area.querySelectorAll("button").forEach(b=>b.disabled=true);
+    if(d>0){hp=Math.min(9,hp+d);loseEnergy(d*15);
+      const v=$("pvis");v.style.animationDuration="0.8s";
+    }else{hp--;gainXP(15);recover();
+      $("pvis").style.animationDuration="4s";
+    }
+    scene++;
+    const fb=fb2();
+    if(hp<=0){
+      $("pvis").classList.add("dead");
+      fb.className="feedback good";fb.innerHTML="💀 <b>O PÊNDULO MORREU DE FOME!</b> A estrutura perdeu o interesse e dissolveu-se. Você permanece livre, calmo, imune.<br><br>";
+      finishLevel(lv,"Você dominou o princípio mais contra-intuitivo do sistema: <b>indiferença é poder</b>.");
+      return;
+    }
+    fb.className="feedback "+(d>0?"bad":"good");fb.innerHTML=txt+" <b>Pêndulo: "+hp+" | Suas vidas: infinitas. 😉</b>";
+    if(hp>0)setTimeout(drawScene,1200);
+  }
+  function fb2(){
+    const el=$("fb");return el;
+  }
+  drawScene();
+}
+
+/* ---------- JOGO ONDA ---------- */
+function ondaGame(lv){
+  const area=$("play-area");
+  const POS=["🍀","💫","🎁","☀️","🤝","🎵"],NEG=["📰","🗯️","👿","📉","🔥","😤"];
+  let wave=0,time=30,alive=true,spawnI=null,tickI=null;
+  area.innerHTML=`<div class="wave-hud"><span>Onda de Sucesso: <b id="w-v">0</b> / 12</span><span>⏱ <span id="w-t">30</span>s</span></div>
+    <div class="wave-meter"><i id="w-m" style="width:0%"></i></div>
+    <div class="wave-area" id="w-area"></div>
+    <p style="margin-top:10px;font-size:13px;color:var(--dim)">💡 'Transmita' o bom: clique nos eventos positivos. Ignore os negativos - quem os toca alimenta o vórtice.</p>
+    <div class="feedback" id="fb"></div>`;
+  const A=$("w-area");
+  function spawn(){
+    if(!alive)return;
+    const neg=Math.random()<0.42;
+    const e=document.createElement("div");e.className="wobj";
+    e.textContent=neg?NEG[Math.floor(Math.random()*NEG.length)]:POS[Math.floor(Math.random()*POS.length)];
+    e.dataset.n=neg?"1":"0";
+    e.style.left=(8+Math.random()*70)+"%";e.style.top=(Math.random()*70)+"%";
+    A.appendChild(e);
+    e.onclick=()=>hit(e);
+    setTimeout(()=>{if(e.parentNode)e.style.opacity=0.2},5200);
+    setTimeout(()=>{if(e.parentNode)e.remove()},5600);
+  }
+  function hit(e){
+    if(!alive)return;
+    e.classList.add("pop");
+    if(e.dataset.n==="0"){wave++;recover();gainXP(5);}
+    else{wave=Math.max(0,wave-2);loseEnergy(12);toast("🌊 A onda perdeu força… você alimentou um vórtice.");}
+    $("w-v").textContent=wave;$("w-m").style.width=Math.min(100,wave/12*100)+"%";
+    setTimeout(()=>e.remove(),350);
+    if(wave>=12)finish();
+  }
+  function tick(){
+    if(!alive)return;
+    time--;$("w-t").textContent=time;
+    if(time<=0)finish();
+  }
+  function finish(){
+    alive=false;clearInterval(spawnI);clearInterval(tickI);
+    const fb=$("fb");
+    if(wave>=12){
+      fb.className="feedback good";fb.innerHTML="🌊 <b>Você montou a Onda de Sucesso!</b> Um sucesso puxa o outro, e o outro puxa o próximo. A correnteza está a seu favor.";
+      gainXP(40,"Onda montada");finishLevel(lv,"Lembre: a onda se agarra por <b>pequenas vitórias transmitidas</b> - não por esforço, e sim por vibração limpa.");
+    }else{
+      fb.className="feedback bad";fb.innerHTML="🌫️ A onda passou… mas o surfista aprende. Tente de novo com atenção ao que toca.";
+      area.querySelectorAll("button");
+      const b=document.createElement("button");b.className="btn sm";b.textContent="🔄 Tentar novamente";
+      b.onclick=()=>ondaGame(lv);fb.appendChild(document.createElement("br"));fb.appendChild(b);
+    }
+  }
+  spawnI=setInterval(spawn,850);tickI=setInterval(tick,1000);
+  spawn();spawn();
+}
+
+/* ---------- JOGO EQUILÍBRIO ---------- */
+function balancoGame(lv){
+  const area=$("play-area");
+  let pos=50,vel=0,time=25,inZone=0,tick=null,pushI=null,alive=true;
+  area.innerHTML=`
+    <div class="bal-lbl"><span>😤 Desespero / Apego</span><span style="color:var(--green)">⚖️ ZONA NEUTRA</span><span>Vanglória / Culpa</span></div>
+    <div class="bal-track"><div class="bal-zone"></div><div class="bal-dot" id="bd"></div></div>
+    <div class="bal-hud" style="display:flex;justify-content:space-between;font-size:13px;color:var(--dim)">
+      <span>⏱ <span id="bal-t">25</span>s</span><span>Não-desvio: <b id="bal-z">0</b></span></div>
+    <div class="bal-btns">
+      <button class="btn sm" id="bl">◀ Soltar (reduzir importância)</button>
+      <button class="btn sm" id="br">Acalmar (humor) ▶</button></div>
+    <div class="feedback" id="fb"></div>`;
+  const dot=$("bd");
+  // "vento" que empurra: importâncias aleatórias surgindo
+  const push=()=>{vel+=(Math.random()-0.5)*2.2;};
+  $("bl").onclick=()=>{vel-=1.6;S.energy=Math.max(0,S.energy-1);hud()};
+  $("br").onclick=()=>{vel+=1.6;S.energy=Math.max(0,S.energy-1);hud()};
+  function step(){
+    if(!alive)return;
+    vel*=0.92;pos+=vel;
+    if(pos<2){pos=2;vel=Math.abs(vel)*0.5;loseBalance(2);}
+    if(pos>98){pos=98;vel=-Math.abs(vel)*0.5;loseBalance(2);}
+    dot.style.left=pos+"%";
+    const z=pos>=38&&pos<=62;
+    if(z){inZone++;$("bal-z").textContent=inZone;}
+  }
+  tick=setInterval(step,90);
+  pushI=setInterval(push,900);
+  const tI=setInterval(()=>{
+    time--;$("bal-t").textContent=time;
+    if(time<=0){
+      alive=false;clearInterval(tick);clearInterval(tI);clearInterval(pushI);
+      const pct=Math.round(inZone/(25*11)*100);
+      const fb=$("fb");
+      if(pct>=70){
+        fb.className="feedback good";fb.innerHTML="⚖️ <b>Equilíbrio mestre!</b> Você manteve a importância leve por "+pct+"% do tempo. O mundo parou de bater na cara - ele flui.";
+        gainXP(45,"Equilíbrio");finishLevel(lv,"Regra de ouro #4 dominada: <b>reduza a importância</b>. Querer, sim. Torcer o mundo, não.");
+      }else if(pct>=45){
+        fb.className="feedback good";fb.innerHTML="👍 Equilíbrio razoável ("+pct+"% no centro). As forças de equilíbrio ainda o testam, mas você resiste.";
+        gainXP(25);finishLevel(lv,"Continue praticando o desapego calmo - o humor desinfla qualquer balão de importância.");
+      }else{
+        fb.className="feedback bad";fb.innerHTML="🎈 O potencial excedente venceu por ora ("+pct+"% no centro). As forças de equilíbrio nivelaram o que você inflou…";
+        const b=document.createElement("button");b.className="btn sm";b.textContent="🔄 Tentar novamente";
+        b.onclick=()=>balancoGame(lv);fb.appendChild(document.createElement("br"));fb.appendChild(b);
+      }
+    }
+  },1000);
+}
+
+/* ================================================================
+   FINAL - SLIDE DA META
+================================================================ */
+function openFinal(){
+  $("f-out").style.display="none";
+  show("s-final");
+}
+function genSlide(){
+  const g=$("f-goal").value.trim();
+  const chk=[...document.querySelectorAll(".chk")].filter(c=>c.checked).map(c=>c.value);
+  if(!g){toast("✍️ Escreva a meta que faz a sua alma vibrar!");return;}
+  const out=$("f-out");
+  if(chk.length>=3){
+    badge("b7");
+    $("f-status").innerHTML="✅ <b>Slide da ALMA detectado!</b> 4/4 sinais de meta verdadeira ("+chk.length+" confirmados).<br>A porta que é sua está se abrindo.";
+  }else{
+    $("f-status").innerHTML="⚠️ <b>Atenção, Surfista:</b> só "+chk.length+"/4 sinais da alma. O desconforto interno é o sinal mais confiável do sistema -<br>talvez esta meta ainda carregue o disfarce de <b>meta de outrem</b>. Ouça o murmúrio das estrelas matutinas antes de embarcar. 🌌";
+  }
+  $("f-goalout").textContent="“"+g+"”";
+  $("f-rank").textContent="🏄 Seu rank atual: "+rank()+" • XP total: "+S.xp;
+  out.style.display="block";
+  gainXP(50,"Slide criado");
+  out.scrollIntoView({behavior:"smooth"});
+}
+function copySlide(){
+  const txt="🌅 MEU SLIDE DE META (Transurfing)\nMeta: "+$('f-goalout').textContent+"\nRank: "+rank()+"\n\n'No Espaço das Variantes, a linha onde esta realidade já existe está à minha espera. Não a force - escolho, ajo com leveza, e deixo as maçãs caírem para o céu.' 🍎☁️";
+  navigator.clipboard.writeText(txt).then(()=>toast("📋 Slide copiado!"),()=>toast("Não foi possível copiar."));
+}
+
+/* ================================================================
+   REGRAS
+================================================================ */
+function renderRules(){
+  $("rules").innerHTML=RULES.map(r=>`<details class="rule"><summary>${r[0]}</summary><p>${r[1]}</p></details>`).join("");
+}
+renderRules();
+</script>
+</body>
+</html>
