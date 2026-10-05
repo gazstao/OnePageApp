@@ -15,6 +15,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 * Gratidao na Vida
 * Lab Algoritmos
 * Transurfing
+* Hábitos Atômicos
 
 ## Estrutura
 
