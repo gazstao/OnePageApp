@@ -16,6 +16,7 @@ A ideia é explorar conceitos, testar ideias e criar aplicações simples que po
 * Lab Algoritmos
 * Transurfing
 * Hábitos Atômicos
+* Inteira - Planejador de Vida
 
 ## Estrutura
 
